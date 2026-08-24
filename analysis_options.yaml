@@ -18,6 +18,25 @@ analyzer:
     - linux/**
 include: package:flutter_lints/flutter.yaml
 
+plugins:
+  import_lint: 2.0.0
+
+import_lint:
+  severity: error
+  rules:
+    core_must_not_depend_on_features:
+      target: "package:ahni_mobile/core/**/*.dart"
+      from: "package:ahni_mobile/features/**/*.dart"
+      except: []
+    domain_must_not_depend_on_flutter:
+      target: "package:ahni_mobile/features/**/domain/**/*.dart"
+      from: "package:flutter/**/*.dart"
+      except: []
+    domain_must_not_depend_on_presentation:
+      target: "package:ahni_mobile/features/**/domain/**/*.dart"
+      from: "package:ahni_mobile/features/**/presentation/**/*.dart"
+      except: []
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`
