@@ -15,9 +15,16 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        titleSpacing: 24,
         title: const Text(
           'AHNI',
-          style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: -0.3),
+          style: TextStyle(
+            color: Color(0xFF18202A),
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            height: 1.4,
+            letterSpacing: -0.3,
+          ),
         ),
       ),
       body: SafeArea(
@@ -40,7 +47,15 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  Text('학사 생활을 위한 준비를 시작합니다.', style: textTheme.headlineMedium),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final title = constraints.maxWidth < 400
+                          ? '학사 생활을 위한\n준비를 시작합니다.'
+                          : '학사 생활을 위한 준비를 시작합니다.';
+
+                      return Text(title, style: textTheme.headlineMedium);
+                    },
+                  ),
                   const SizedBox(height: 12),
                   Text('개발 환경이 준비되었습니다.', style: textTheme.bodyLarge),
                   const Spacer(),

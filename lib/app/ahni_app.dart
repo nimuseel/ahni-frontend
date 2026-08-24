@@ -14,7 +14,7 @@ class AhniApp extends StatelessWidget {
       seedColor: accent,
       brightness: Brightness.light,
       surface: const Color(0xFFF7F8FA),
-    );
+    ).copyWith(primary: accent);
 
     return MaterialApp(
       title: 'AHNI',
