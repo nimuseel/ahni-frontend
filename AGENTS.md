@@ -8,7 +8,8 @@
 
 ```text
 lib/       Flutter application code and future feature modules
-test/      unit, widget, and integration tests
+contracts/ pinned backend OpenAPI contract
+test/      unit, widget, and host-independent integration tests
 android/   Android host project
 ios/       iOS host project
 docs/      architecture, domain, development, reliability
@@ -21,21 +22,27 @@ scripts/   repeatable verification commands
 | --- | --- |
 | Add a screen | `ARCHITECTURE.md`, `docs/development/testing.md` |
 | Add academic calculation | `docs/domain/index.md`, `test/` |
-| Change API integration | `docs/architecture/boundaries.md`, `docs/reliability/errors.md` |
+| Change API integration | `docs/development/api-contract.md`, `docs/reliability/errors.md` |
 | Change permissions | `docs/security/README.md` |
 
 ## Commands
 
 ```bash
-flutter pub get
-flutter analyze
-flutter test
+./scripts/setup
+./scripts/lint
+./scripts/typecheck
+./scripts/test-unit
+./scripts/test-widget
+./scripts/test-integration
 ./scripts/verify
 ```
 
 ## Invariants
 
 - Widget code presents state; domain calculations stay in pure Dart classes.
+- `lib/core` never imports `lib/features`; feature domain code never imports Flutter or presentation code.
+- The app consumes the pinned backend OpenAPI contract and never accesses Supabase PostgreSQL directly.
+- Authentication tokens are introduced only through a secure-storage adapter, never in widgets or logs.
 - API and device permission failures have explicit loading, empty, error, and retry states.
 - Student-owned data is never displayed from an unverified account scope.
 - Network, location, notification, and file permissions are requested at the point of need.
@@ -44,5 +51,5 @@ flutter test
 
 ## Definition of Done
 
-The affected tests, `flutter analyze`, and `./scripts/verify` pass. New screens include accessibility labels and documented error states.
+The affected unit, widget, and integration tests plus `./scripts/verify` pass on Flutter 3.47.1. New screens include accessibility labels and documented error states. API changes record contract compatibility and affected clients.
 - 커밋 또는 PR 작업 | `docs/development/git-workflow.md`
