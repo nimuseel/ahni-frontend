@@ -3,9 +3,5 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
-
-./scripts/lint
-./scripts/typecheck
-./scripts/test-unit
-./scripts/test-widget
-./scripts/test-integration
+dart format --output=none --set-exit-if-changed lib test
+dart run import_lint

@@ -3,9 +3,4 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
-
-./scripts/lint
-./scripts/typecheck
-./scripts/test-unit
-./scripts/test-widget
-./scripts/test-integration
+flutter test test/integration

@@ -12,13 +12,15 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.47.1'
           channel: stable
           cache: true
-      - name: Install dependencies
-        run: flutter pub get
-      - name: Verify
+      - name: Set up dependencies
+        run: ./scripts/setup
+      - name: Full harness verification
         run: ./scripts/verify

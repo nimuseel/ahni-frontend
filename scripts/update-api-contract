@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+if [[ $# -ne 1 ]]; then
+  echo "Usage: $0 <backend-openapi.json>" >&2
+  exit 64
+fi
+
+source_contract="$1"
+if [[ ! -f "$source_contract" ]]; then
+  echo "OpenAPI contract not found: $source_contract" >&2
+  exit 66
+fi
+
+mkdir -p "$repo_root/contracts"
+cp "$source_contract" "$repo_root/contracts/backend-openapi.json"
+
+cd "$repo_root"
+flutter test test/unit/contracts/backend_openapi_contract_test.dart

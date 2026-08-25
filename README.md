@@ -1,16 +1,17 @@
-# ahni_mobile
+# AHNI Mobile
 
-A new Flutter project.
+AHNI's Flutter student application. The current branch establishes the app boundary, backend contract snapshot, and repeatable test harness before business features are added.
 
-## Getting Started
+## Toolchain
 
-This project is a starting point for a Flutter application.
+- Flutter 3.47.1 stable
+- Dart 3.13.1
 
-A few resources to get you started if this is your first Flutter project:
+## Verify
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```bash
+./scripts/setup
+./scripts/verify
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+See `AGENTS.md`, `ARCHITECTURE.md`, `DESIGN.md`, and `docs/development/commands.md` before changing application boundaries or tooling.
