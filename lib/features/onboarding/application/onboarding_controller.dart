@@ -1,0 +1,215 @@
+// ignore_for_file: prefer_initializing_formals
+
+import 'package:ahni_mobile/core/auth/auth_gateway.dart';
+import 'package:ahni_mobile/core/network/student_api.dart';
+import 'package:flutter/foundation.dart';
+
+sealed class OnboardingState {
+  const OnboardingState();
+}
+
+class ProfileLoading extends OnboardingState {
+  const ProfileLoading();
+}
+
+class AuthenticationRequired extends OnboardingState {
+  const AuthenticationRequired({this.message, this.isSubmitting = false});
+
+  final String? message;
+  final bool isSubmitting;
+}
+
+class RegistrationRequired extends OnboardingState {
+  const RegistrationRequired({
+    required this.departments,
+    this.message,
+    this.isSubmitting = false,
+  });
+
+  final List<Department> departments;
+  final String? message;
+  final bool isSubmitting;
+}
+
+class ProfileReady extends OnboardingState {
+  const ProfileReady(this.profile);
+
+  final StudentProfile profile;
+}
+
+class RetryableFailure extends OnboardingState {
+  const RetryableFailure(this.message);
+
+  final String message;
+}
+
+class OnboardingController extends ChangeNotifier {
+  OnboardingController({required AuthGateway auth, required StudentApi api})
+    : _auth = auth,
+      _api = api;
+
+  final AuthGateway _auth;
+  final StudentApi _api;
+  OnboardingState _state = const ProfileLoading();
+  bool _initialized = false;
+
+  OnboardingState get state => _state;
+
+  Future<void> initialize() async {
+    if (_initialized) return;
+    _initialized = true;
+    await _routeSession();
+  }
+
+  Future<void> retry() => _routeSession();
+
+  Future<void> signIn(String email, String password) async {
+    _setState(const AuthenticationRequired(isSubmitting: true));
+    try {
+      final session = await _auth.signIn(email.trim(), password);
+      if (session == null) {
+        _setState(
+          const AuthenticationRequired(message: '로그인을 완료하지 못했습니다. 다시 시도해 주세요.'),
+        );
+        return;
+      }
+      await _loadProfile(session);
+    } on AuthFailure catch (failure) {
+      _setState(AuthenticationRequired(message: failure.userMessage));
+    } on Object catch (_) {
+      _setState(
+        const AuthenticationRequired(
+          message: '인증을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+        ),
+      );
+    }
+  }
+
+  Future<void> signUp(String email, String password) async {
+    _setState(const AuthenticationRequired(isSubmitting: true));
+    try {
+      final session = await _auth.signUp(email.trim(), password);
+      if (session == null) {
+        _setState(
+          const AuthenticationRequired(
+            message: '인증 메일을 보냈습니다. 메일의 링크를 확인해 주세요.',
+          ),
+        );
+        return;
+      }
+      await _loadProfile(session);
+    } on AuthFailure catch (failure) {
+      _setState(AuthenticationRequired(message: failure.userMessage));
+    } on Object catch (_) {
+      _setState(
+        const AuthenticationRequired(
+          message: '계정을 만들지 못했습니다. 잠시 후 다시 시도해 주세요.',
+        ),
+      );
+    }
+  }
+
+  Future<void> registerProfile(StudentRegistration registration) async {
+    final previous = _state;
+    if (previous is! RegistrationRequired) return;
+    final session = _auth.currentSession;
+    if (session == null) {
+      _setState(const AuthenticationRequired());
+      return;
+    }
+    _setState(
+      RegistrationRequired(
+        departments: previous.departments,
+        isSubmitting: true,
+      ),
+    );
+    try {
+      final profile = await _api.registerProfile(
+        session.accessToken,
+        registration,
+      );
+      _setState(ProfileReady(profile));
+    } on StudentApiFailure catch (failure) {
+      if (failure.kind == StudentApiFailureKind.unauthorized) {
+        await _returnToAuthentication();
+        return;
+      }
+      _setState(
+        RegistrationRequired(
+          departments: previous.departments,
+          message: failure.userMessage,
+        ),
+      );
+    } on Object catch (_) {
+      _setState(
+        RegistrationRequired(
+          departments: previous.departments,
+          message: '학생 정보를 등록하지 못했습니다. 다시 시도해 주세요.',
+        ),
+      );
+    }
+  }
+
+  Future<void> signOut() async {
+    await _auth.signOut();
+    _setState(const AuthenticationRequired());
+  }
+
+  Future<void> _routeSession() async {
+    final session = _auth.currentSession;
+    if (session == null) {
+      _setState(const AuthenticationRequired());
+      return;
+    }
+    await _loadProfile(session);
+  }
+
+  Future<void> _loadProfile(AuthSession session) async {
+    _setState(const ProfileLoading());
+    try {
+      _setState(ProfileReady(await _api.getProfile(session.accessToken)));
+    } on StudentApiFailure catch (failure) {
+      switch (failure.kind) {
+        case StudentApiFailureKind.studentNotFound:
+          await _loadRegistration();
+          return;
+        case StudentApiFailureKind.unauthorized:
+          await _returnToAuthentication();
+          return;
+        case StudentApiFailureKind.validation:
+        case StudentApiFailureKind.recoverable:
+          _setState(RetryableFailure(failure.userMessage));
+          return;
+      }
+    } on Object catch (_) {
+      _setState(const RetryableFailure('학생 정보를 불러오지 못했습니다.\n다시 시도해 주세요.'));
+    }
+  }
+
+  Future<void> _loadRegistration() async {
+    try {
+      final departments = await _api.getDepartments();
+      if (departments.isEmpty) {
+        _setState(const RetryableFailure('학과 목록을 불러오지 못했습니다.\n다시 시도해 주세요.'));
+        return;
+      }
+      _setState(RegistrationRequired(departments: departments));
+    } on StudentApiFailure catch (failure) {
+      _setState(RetryableFailure(failure.userMessage));
+    } on Object catch (_) {
+      _setState(const RetryableFailure('학과 목록을 불러오지 못했습니다.\n다시 시도해 주세요.'));
+    }
+  }
+
+  Future<void> _returnToAuthentication() async {
+    await _auth.signOut();
+    _setState(
+      const AuthenticationRequired(message: '로그인이 만료되었습니다. 다시 로그인해 주세요.'),
+    );
+  }
+
+  void _setState(OnboardingState next) {
+    _state = next;
+    notifyListeners();
+  }
+}

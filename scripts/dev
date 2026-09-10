@@ -3,4 +3,16 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
-flutter run --dart-define=APP_ENV=development
+
+: "${SUPABASE_URL:?SUPABASE_URL 환경변수를 설정해 주세요.}"
+: "${SUPABASE_PUBLISHABLE_KEY:?SUPABASE_PUBLISHABLE_KEY 환경변수를 설정해 주세요.}"
+: "${API_BASE_URL:?API_BASE_URL 환경변수를 설정해 주세요.}"
+
+dart_defines=(
+  "--dart-define=APP_ENV=${APP_ENV:-development}"
+  "--dart-define=SUPABASE_URL=${SUPABASE_URL}"
+  "--dart-define=SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}"
+  "--dart-define=API_BASE_URL=${API_BASE_URL}"
+)
+
+flutter run "${dart_defines[@]}"
