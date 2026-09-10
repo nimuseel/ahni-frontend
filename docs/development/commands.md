@@ -18,6 +18,17 @@
 ./scripts/verify
 ```
 
+Before running `./scripts/dev`, provide the local development configuration through
+the shell environment. The script converts these values into Flutter `--dart-define`
+arguments; exporting them alone does not make them available to `String.fromEnvironment`.
+
+```bash
+export SUPABASE_URL="https://your-project.supabase.co"
+export SUPABASE_PUBLISHABLE_KEY="your-publishable-key"
+export API_BASE_URL="http://localhost:8080"
+./scripts/dev
+```
+
 `scripts/verify` runs lint, type checking, unit tests, widget tests, and the integration smoke test in that order. It is the authoritative local and CI entry point.
 
 The default integration layer lives under `test/integration` and exercises the complete app shell with Flutter's host-independent test runner. Device-specific journeys belong to their feature branches and must add a provisioned emulator or physical-device CI job instead of making the default harness depend on an unavailable device.
