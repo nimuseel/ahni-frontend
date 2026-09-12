@@ -1,5 +1,7 @@
 // ignore_for_file: prefer_initializing_formals
 
+import 'dart:async';
+
 import 'package:ahni_mobile/core/auth/auth_gateway.dart';
 import 'package:ahni_mobile/core/network/student_api.dart';
 import 'package:flutter/foundation.dart';
@@ -57,6 +59,7 @@ class OnboardingController extends ChangeNotifier {
   final AuthGateway _auth;
   final StudentApi _api;
   OnboardingState _state = const ProfileLoading();
+  StreamSubscription<AuthSession>? _signedInSubscription;
   bool _initialized = false;
 
   OnboardingState get state => _state;
@@ -64,6 +67,12 @@ class OnboardingController extends ChangeNotifier {
   Future<void> initialize() async {
     if (_initialized) return;
     _initialized = true;
+    _signedInSubscription = _auth.signedInSessions.listen(
+      (session) => unawaited(_loadProfile(session)),
+      onError: (Object _) {
+        _setState(const RetryableFailure('이메일 인증 상태를 확인하지 못했습니다. 다시 시도해 주세요.'));
+      },
+    );
     await _routeSession();
   }
 
@@ -225,5 +234,12 @@ class OnboardingController extends ChangeNotifier {
   void _setState(OnboardingState next) {
     _state = next;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    final subscription = _signedInSubscription;
+    if (subscription != null) unawaited(subscription.cancel());
+    super.dispose();
   }
 }

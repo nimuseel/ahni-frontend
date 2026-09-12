@@ -17,6 +17,8 @@ class AuthFailure implements Exception {
 abstract interface class AuthGateway {
   AuthSession? get currentSession;
 
+  Stream<AuthSession> get signedInSessions;
+
   Future<AuthSession?> signIn(String email, String password);
 
   Future<AuthSession?> signUp(String email, String password);
@@ -31,6 +33,14 @@ class SupabaseAuthGateway implements AuthGateway {
 
   @override
   AuthSession? get currentSession => _mapSession(_client.auth.currentSession);
+
+  @override
+  Stream<AuthSession> get signedInSessions => _client.auth.onAuthStateChange
+      .where(
+        (state) =>
+            state.event == AuthChangeEvent.signedIn && state.session != null,
+      )
+      .map((state) => _mapSession(state.session)!);
 
   @override
   Future<AuthSession?> signIn(String email, String password) async {
@@ -51,6 +61,7 @@ class SupabaseAuthGateway implements AuthGateway {
       final response = await _client.auth.signUp(
         email: email,
         password: password,
+        emailRedirectTo: 'com.ahni.mobile://login-callback/',
       );
       return _mapSession(response.session);
     } on AuthException catch (error) {
