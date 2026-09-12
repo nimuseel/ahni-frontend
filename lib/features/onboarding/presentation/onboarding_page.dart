@@ -1,4 +1,5 @@
 import 'package:ahni_mobile/core/network/student_api.dart';
+import 'package:ahni_mobile/core/presentation/whitespace_wrapped_text.dart';
 import 'package:ahni_mobile/features/onboarding/application/onboarding_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -108,135 +109,117 @@ class _AuthenticationViewState extends State<_AuthenticationView> {
     }
   }
 
-  void _toggleMode() {
+  void _selectMode(bool isSignUp) {
+    if (_isSignUp == isSignUp) return;
     setState(() {
-      _isSignUp = !_isSignUp;
+      _isSignUp = isSignUp;
+      _emailController.clear();
+      _passwordController.clear();
       _formKey = GlobalKey<FormState>();
     });
+    widget.controller.clearAuthenticationFeedback();
   }
 
   @override
   Widget build(BuildContext context) {
     final isSubmitting = widget.state.isSubmitting;
-    final usesLargeText = MediaQuery.textScalerOf(context).scale(16) >= 24;
-    final description = switch ((_isSignUp, usesLargeText)) {
-      (true, true) => '학교 이메일로\n계정을 만들고\n학생 정보를\n등록합니다.',
-      (true, false) => '학교 이메일로 계정을 만들고\n학생 정보를 등록합니다.',
-      (false, true) => '학교 이메일로\n로그인해 내\n학사 정보를\n확인합니다.',
-      (false, false) => '학교 이메일로 로그인해\n내 학사 정보를 확인합니다.',
-    };
+    final description = _isSignUp
+        ? '학교 이메일로 가입한 뒤 학생 정보를 등록할 수 있어요.'
+        : '학교 이메일로 로그인하면 내 학사 정보를 편하게 확인할 수 있어요.';
     return _PageScaffold(
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _AccentRule(),
-            const SizedBox(height: 32),
-            Text(
-              '학사 준비를 이어가세요',
+            WhitespaceWrappedText(
+              '학사 준비, 함께 이어가요',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 12),
-            Text(description, style: Theme.of(context).textTheme.bodyLarge),
-            const SizedBox(height: 32),
-            if (widget.state.message case final message?) ...[
-              _StatusMessage(message: message),
-              const SizedBox(height: 16),
-            ],
-            TextFormField(
-              key: const Key('auth-email'),
-              controller: _emailController,
-              enabled: !isSubmitting,
-              autofillHints: const [AutofillHints.email],
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.next,
-              autocorrect: false,
-              validator: _validateEmail,
-              decoration: const InputDecoration(
-                labelText: '학교 이메일',
-                hintText: 'student@inha.edu',
-              ),
+            WhitespaceWrappedText(
+              description,
+              style: Theme.of(context).textTheme.bodyLarge,
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              key: const Key('auth-password'),
-              controller: _passwordController,
-              enabled: !isSubmitting,
-              obscureText: _obscurePassword,
-              autofillHints: _isSignUp
-                  ? const [AutofillHints.newPassword]
-                  : const [AutofillHints.password],
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: isSubmitting ? null : (_) => _submit(),
-              validator: _validatePassword,
-              decoration: InputDecoration(
-                labelText: '비밀번호',
-                suffixIcon: IconButton(
-                  tooltip: _obscurePassword ? '비밀번호 표시' : '비밀번호 숨기기',
-                  onPressed: isSubmitting
-                      ? null
-                      : () => setState(
-                          () => _obscurePassword = !_obscurePassword,
+            const SizedBox(height: 24),
+            _SectionCard(
+              key: const Key('auth-card'),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _AuthModeSwitch(
+                    isSignUp: _isSignUp,
+                    isEnabled: !isSubmitting,
+                    onChanged: _selectMode,
+                  ),
+                  const SizedBox(height: 24),
+                  if (widget.state.message case final message?) ...[
+                    _StatusMessage(message: message),
+                    const SizedBox(height: 16),
+                  ],
+                  TextFormField(
+                    key: const Key('auth-email'),
+                    controller: _emailController,
+                    enabled: !isSubmitting,
+                    autofillHints: const [AutofillHints.email],
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    autocorrect: false,
+                    validator: _validateEmail,
+                    decoration: const InputDecoration(
+                      labelText: '학교 이메일',
+                      hintText: 'student@inha.edu',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    key: const Key('auth-password'),
+                    controller: _passwordController,
+                    enabled: !isSubmitting,
+                    obscureText: _obscurePassword,
+                    autofillHints: _isSignUp
+                        ? const [AutofillHints.newPassword]
+                        : const [AutofillHints.password],
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: isSubmitting ? null : (_) => _submit(),
+                    validator: _validatePassword,
+                    decoration: InputDecoration(
+                      labelText: '비밀번호',
+                      suffixIcon: IconButton(
+                        tooltip: _obscurePassword ? '비밀번호 표시' : '비밀번호 숨기기',
+                        onPressed: isSubmitting
+                            ? null
+                            : () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
                         ),
-                  icon: Icon(
-                    _obscurePassword
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: isSubmitting ? null : _submit,
-                child: _ButtonLabel(
-                  isLoading: isSubmitting,
-                  label: _isSignUp ? '계정 만들기' : '로그인',
-                ),
-              ),
-            ),
-            if (_isSignUp) ...[
-              const SizedBox(height: 8),
-              Text(
-                '가입 후 인증 메일을 보내드립니다.',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Flexible(
-                  child: Text(
-                    _isSignUp ? '이미 계정이 있으신가요?' : '처음이신가요?',
-                    style: Theme.of(context).textTheme.bodySmall,
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: isSubmitting ? null : _submit,
+                      child: _ButtonLabel(
+                        isLoading: isSubmitting,
+                        label: _isSignUp ? '계정 만들기' : '로그인',
+                      ),
+                    ),
                   ),
-                ),
-                TextButton(
-                  onPressed: isSubmitting ? null : _toggleMode,
-                  child: Text(_isSignUp ? '로그인하기' : '가입하기'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.only(top: 2),
-                  child: Icon(Icons.lock_outline, size: 18),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '로그인 정보는 기기의 보안 저장소에 보관합니다.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-              ],
+                  if (_isSignUp) ...[
+                    const SizedBox(height: 12),
+                    WhitespaceWrappedText(
+                      '가입하면 학교 이메일로 인증 링크를 보내드려요.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ],
+              ),
             ),
           ],
         ),
@@ -293,105 +276,109 @@ class _RegistrationViewState extends State<_RegistrationView> {
   Widget build(BuildContext context) {
     final isSubmitting = widget.state.isSubmitting;
     return _PageScaffold(
-      action: TextButton.icon(
+      title: '학생 정보',
+      action: IconButton(
         onPressed: isSubmitting ? null : widget.controller.signOut,
-        icon: const Icon(Icons.logout, size: 18),
-        label: const Text('로그아웃'),
+        tooltip: '로그아웃',
+        icon: const Icon(Icons.logout_rounded, size: 20),
       ),
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _AccentRule(),
-            const SizedBox(height: 32),
-            Text(
-              '학생 정보를\n등록해 주세요',
+            WhitespaceWrappedText(
+              '학생 정보를 알려주세요',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 12),
-            Text(
-              '학과와 입학연도는 맞춤 학사 안내에 사용합니다.',
+            WhitespaceWrappedText(
+              '학과, 입학연도와 학적 상태는 맞춤 학사 안내에 사용해요.',
               style: Theme.of(context).textTheme.bodyLarge,
             ),
-            const SizedBox(height: 32),
-            if (widget.state.message case final message?) ...[
-              _StatusMessage(message: message, isError: true),
-              const SizedBox(height: 16),
-            ],
-            DropdownButtonFormField<String>(
-              key: const Key('department-field'),
-              initialValue: _departmentId,
-              isExpanded: true,
-              decoration: const InputDecoration(labelText: '주전공 학과'),
-              items: [
-                for (final department in widget.state.departments)
-                  DropdownMenuItem(
-                    value: department.entityId,
-                    child: Text(
-                      department.name,
-                      overflow: TextOverflow.ellipsis,
+            const SizedBox(height: 24),
+            _SectionCard(
+              key: const Key('registration-card'),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (widget.state.message case final message?) ...[
+                    _StatusMessage(message: message, isError: true),
+                    const SizedBox(height: 16),
+                  ],
+                  Text('기본 정보', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    key: const Key('department-field'),
+                    initialValue: _departmentId,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: '주전공 학과'),
+                    items: [
+                      for (final department in widget.state.departments)
+                        DropdownMenuItem(
+                          value: department.entityId,
+                          child: Text(
+                            department.name,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                    ],
+                    onChanged: isSubmitting
+                        ? null
+                        : (value) => setState(() => _departmentId = value),
+                    validator: (value) =>
+                        value == null ? '주전공 학과를 선택해 주세요.' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    key: const Key('admission-year'),
+                    controller: _admissionYearController,
+                    enabled: !isSubmitting,
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.next,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    validator: _validateAdmissionYear,
+                    decoration: const InputDecoration(
+                      labelText: '입학연도',
+                      hintText: '2024',
                     ),
                   ),
-              ],
-              onChanged: isSubmitting
-                  ? null
-                  : (value) => setState(() => _departmentId = value),
-              validator: (value) => value == null ? '주전공 학과를 선택해 주세요.' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              key: const Key('admission-year'),
-              controller: _admissionYearController,
-              enabled: !isSubmitting,
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.next,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              validator: _validateAdmissionYear,
-              decoration: const InputDecoration(
-                labelText: '입학연도',
-                hintText: '2024',
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              key: const Key('nickname'),
-              controller: _nicknameController,
-              enabled: !isSubmitting,
-              maxLength: 100,
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: isSubmitting ? null : (_) => _submit(),
-              decoration: const InputDecoration(labelText: '닉네임 (선택)'),
-            ),
-            const SizedBox(height: 8),
-            Text('현재 학적 상태', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            RadioGroup<String>(
-              groupValue: _enrollmentStatus,
-              onChanged: isSubmitting
-                  ? (_) {}
-                  : (value) => setState(() => _enrollmentStatus = value!),
-              child: const Column(
-                children: [
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Radio<String>(value: 'ENROLLED'),
-                    title: Text('재학'),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    key: const Key('nickname'),
+                    controller: _nicknameController,
+                    enabled: !isSubmitting,
+                    maxLength: 100,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: isSubmitting ? null : (_) => _submit(),
+                    decoration: const InputDecoration(labelText: '닉네임 (선택)'),
                   ),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Radio<String>(value: 'LEAVE'),
-                    title: Text('휴학'),
+                  const SizedBox(height: 8),
+                  Text(
+                    '현재 학적 상태',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  _ValueSegmentedControl(
+                    key: const Key('enrollment-status-segments'),
+                    value: _enrollmentStatus,
+                    isEnabled: !isSubmitting,
+                    options: const {'ENROLLED': '재학', 'LEAVE': '휴학'},
+                    onChanged: (value) =>
+                        setState(() => _enrollmentStatus = value),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: isSubmitting ? null : _submit,
+                      child: _ButtonLabel(
+                        isLoading: isSubmitting,
+                        label: '학생 정보 등록',
+                      ),
+                    ),
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: isSubmitting ? null : _submit,
-                child: _ButtonLabel(isLoading: isSubmitting, label: '학생 정보 등록'),
               ),
             ),
           ],
@@ -409,68 +396,90 @@ class _ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayName = profile.nickname?.trim().isNotEmpty == true
+        ? profile.nickname!.trim()
+        : profile.email.split('@').first;
+    final enrollmentLabel = switch (profile.enrollmentStatus) {
+      'ENROLLED' => '재학',
+      'LEAVE' => '휴학',
+      'GRADUATED' => '졸업',
+      'WITHDRAWN' => '제적',
+      _ => '확인 필요',
+    };
     return _PageScaffold(
       maxWidth: 560,
-      action: TextButton.icon(
+      title: '내 정보',
+      action: IconButton(
         onPressed: controller.signOut,
-        icon: const Icon(Icons.logout, size: 18),
-        label: const Text('로그아웃'),
+        tooltip: '로그아웃',
+        icon: const Icon(Icons.logout_rounded, size: 20),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _AccentRule(),
-          const SizedBox(height: 32),
-          Text(
-            '학사 준비를 이어가세요',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            '등록한 학생 정보를 확인하세요.',
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-          const SizedBox(height: 32),
           Container(
+            key: const Key('profile-summary'),
             width: double.infinity,
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: const Color(0xFFDDE2E8)),
-              borderRadius: BorderRadius.circular(12),
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(20),
             ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 28,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  child: Text(
+                    displayName.characters.first.toUpperCase(),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        profile.primaryDepartment.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                _StatusBadge(label: enrollmentLabel),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          _SectionCard(
+            key: const Key('student-information-card'),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text('학생 정보', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 20),
                 _ProfileField(label: '학교 이메일', value: profile.email),
-                const Divider(height: 32),
-                _ProfileField(
-                  label: '닉네임',
-                  value: profile.nickname?.isNotEmpty == true
-                      ? profile.nickname!
-                      : '미설정',
-                ),
-                const Divider(height: 32),
-                _ProfileField(
-                  label: '주전공 학과',
-                  value: profile.primaryDepartment.name,
-                ),
                 const Divider(height: 32),
                 _ProfileField(
                   label: '입학연도',
                   value: '${profile.admissionYear}년',
                 ),
                 const Divider(height: 32),
-                _ProfileField(
-                  label: '학적 상태',
-                  value: switch (profile.enrollmentStatus) {
-                    'ENROLLED' => '재학',
-                    'LEAVE' => '휴학',
-                    'GRADUATED' => '졸업',
-                    'WITHDRAWN' => '제적',
-                    _ => '확인 필요',
-                  },
-                ),
+                _ProfileField(label: '학적 상태', value: enrollmentLabel),
                 const Divider(height: 32),
                 _ProfileField(
                   label: '계정 상태',
@@ -490,15 +499,18 @@ class _LoadingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _PageScaffold(
+    return _PageScaffold(
       fillViewport: true,
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('학생 정보를 불러오는 중입니다.'),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 20),
+            WhitespaceWrappedText(
+              '학생 정보를 불러오는 중이에요…',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
           ],
         ),
       ),
@@ -517,23 +529,25 @@ class _RetryView extends StatelessWidget {
     return _PageScaffold(
       fillViewport: true,
       child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.cloud_off_outlined,
-              size: 40,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 24),
-            FilledButton(onPressed: onRetry, child: const Text('다시 시도')),
-          ],
+        child: _SectionCard(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.cloud_off_outlined,
+                size: 40,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 16),
+              WhitespaceWrappedText(
+                message,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 24),
+              FilledButton(onPressed: onRetry, child: const Text('다시 시도')),
+            ],
+          ),
         ),
       ),
     );
@@ -544,12 +558,14 @@ class _PageScaffold extends StatelessWidget {
   const _PageScaffold({
     required this.child,
     this.action,
+    this.title = 'AHNI',
     this.maxWidth = 400,
     this.fillViewport = false,
   });
 
   final Widget child;
   final Widget? action;
+  final String title;
   final double maxWidth;
   final bool fillViewport;
 
@@ -557,10 +573,8 @@ class _PageScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         titleSpacing: 24,
-        title: const Text('AHNI'),
+        title: Text(title),
         actions: action == null
             ? null
             : [
@@ -596,17 +610,144 @@ class _PageScaffold extends StatelessWidget {
   }
 }
 
-class _AccentRule extends StatelessWidget {
-  const _AccentRule();
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({required this.child, super.key});
+
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 56,
-      height: 4,
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary,
-        borderRadius: BorderRadius.circular(2),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.onSurface
+                .withValues(alpha: 0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _AuthModeSwitch extends StatelessWidget {
+  const _AuthModeSwitch({
+    required this.isSignUp,
+    required this.isEnabled,
+    required this.onChanged,
+  });
+
+  final bool isSignUp;
+  final bool isEnabled;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return _ValueSegmentedControl(
+      key: const Key('auth-mode-switch'),
+      value: isSignUp ? 'sign-up' : 'sign-in',
+      isEnabled: isEnabled,
+      options: const {'sign-in': '로그인', 'sign-up': '가입'},
+      optionKeys: const {
+        'sign-in': Key('auth-sign-in-segment'),
+        'sign-up': Key('auth-sign-up-segment'),
+      },
+      onChanged: (value) => onChanged(value == 'sign-up'),
+    );
+  }
+}
+
+class _ValueSegmentedControl extends StatelessWidget {
+  const _ValueSegmentedControl({
+    required this.value,
+    required this.isEnabled,
+    required this.options,
+    required this.onChanged,
+    this.optionKeys = const {},
+    super.key,
+  });
+
+  final String value;
+  final bool isEnabled;
+  final Map<String, String> options;
+  final Map<String, Key> optionKeys;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          for (final option in options.entries)
+            Expanded(
+              child: Semantics(
+                key: optionKeys[option.key],
+                button: true,
+                selected: value == option.key,
+                enabled: isEnabled,
+                child: Material(
+                  color: value == option.key
+                      ? colorScheme.surface
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  child: InkWell(
+                    onTap: isEnabled ? () => onChanged(option.key) : null,
+                    borderRadius: BorderRadius.circular(10),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 44),
+                      child: Center(
+                        child: Text(
+                          option.value,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: value == option.key
+                                    ? colorScheme.onSurface
+                                    : colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.bodySmall
+            ?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -630,7 +771,7 @@ class _StatusMessage extends StatelessWidget {
           color: isError ? colorScheme.errorContainer : const Color(0xFFEAF2FC),
           borderRadius: BorderRadius.circular(6),
         ),
-        child: Text(
+        child: WhitespaceWrappedText(
           message,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: isError

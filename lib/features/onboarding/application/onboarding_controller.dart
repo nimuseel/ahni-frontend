@@ -63,6 +63,13 @@ class OnboardingController extends ChangeNotifier {
 
   Future<void> retry() => _routeSession();
 
+  void clearAuthenticationFeedback() {
+    final current = _state;
+    if (current is AuthenticationRequired && current.message != null) {
+      _setState(const AuthenticationRequired());
+    }
+  }
+
   Future<void> signIn(String email, String password) async {
     _setState(const AuthenticationRequired(isSubmitting: true));
     try {
