@@ -59,6 +59,18 @@ void main() {
     expect(controller.state, isA<AuthenticationRequired>());
   });
 
+  test('sign-up without a session waits for email verification', () async {
+    final controller = OnboardingController(
+      auth: FakeAuthGateway(),
+      api: FakeStudentApi(),
+    );
+
+    await controller.signUp('  student@inha.edu  ', 'password123');
+
+    final state = controller.state as EmailVerificationPending;
+    expect(state.email, 'student@inha.edu');
+  });
+
   test('a recoverable profile failure can retry successfully', () async {
     var requests = 0;
     final api = FakeStudentApi()

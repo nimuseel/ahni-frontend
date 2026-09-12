@@ -53,7 +53,7 @@ void main() {
     expect(find.text('소프트웨어융합공학과'), findsOneWidget);
   });
 
-  testWidgets('validates school email and explains email confirmation', (
+  testWidgets('validates school email and shows email confirmation pending', (
     tester,
   ) async {
     final controller = OnboardingController(
@@ -111,19 +111,22 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('인하대학교 이메일(@inha.edu)을 입력해 주세요.'), findsNothing);
     expect(find.text('비밀번호를 6자 이상 입력해 주세요.'), findsNothing);
+    expect(controller.state, isA<EmailVerificationPending>());
+    expect(findWhitespaceWrappedText('이메일을 확인해 주세요'), findsOneWidget);
+    expect(find.text('student@inha.edu'), findsOneWidget);
     expect(
-      (controller.state as AuthenticationRequired).message,
-      '인증 메일을 보냈습니다. 메일의 링크를 확인해 주세요.',
-    );
-    expect(
-      findWhitespaceWrappedText('인증 메일을 보냈습니다. 메일의 링크를 확인해 주세요.'),
+      findWhitespaceWrappedText('메일의 링크를 확인한 뒤 로그인해 주세요.'),
       findsOneWidget,
     );
+
+    await tester.tap(find.widgetWithText(FilledButton, '로그인으로 돌아가기'));
+    await tester.pump();
+
+    expect(controller.state, isA<AuthenticationRequired>());
+    expect(find.byKey(const Key('auth-email')), findsOneWidget);
   });
 
-  testWidgets('auth modes do not share credentials or feedback', (
-    tester,
-  ) async {
+  testWidgets('auth modes do not share credentials', (tester) async {
     final controller = OnboardingController(
       auth: FakeAuthGateway(),
       api: FakeStudentApi(),
@@ -161,22 +164,9 @@ void main() {
       find.byKey(const Key('auth-password')),
       'password123',
     );
-    final signUpButton = find.widgetWithText(FilledButton, '계정 만들기');
-    await tester.ensureVisible(signUpButton);
-    await tester.tap(signUpButton);
-    await tester.pumpAndSettle();
-    expect(
-      findWhitespaceWrappedText('인증 메일을 보냈습니다. 메일의 링크를 확인해 주세요.'),
-      findsOneWidget,
-    );
-
     await tester.tap(find.byKey(const Key('auth-sign-in-segment')));
     await tester.pump();
 
-    expect(
-      findWhitespaceWrappedText('인증 메일을 보냈습니다. 메일의 링크를 확인해 주세요.'),
-      findsNothing,
-    );
     final fieldsAfterSignIn = tester.widgetList<EditableText>(
       find.byType(EditableText),
     );

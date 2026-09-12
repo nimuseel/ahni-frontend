@@ -40,6 +40,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
         controller: widget.controller,
         state: state,
       ),
+      EmailVerificationPending state => _EmailVerificationPendingView(
+        email: state.email,
+        onReturnToLogin: widget.controller.returnToAuthentication,
+      ),
       ProfileLoading() => const _LoadingView(),
       RegistrationRequired state => _RegistrationView(
         controller: widget.controller,
@@ -54,6 +58,63 @@ class _OnboardingPageState extends State<OnboardingPage> {
         onRetry: widget.controller.retry,
       ),
     };
+  }
+}
+
+class _EmailVerificationPendingView extends StatelessWidget {
+  const _EmailVerificationPendingView({
+    required this.email,
+    required this.onReturnToLogin,
+  });
+
+  final String email;
+  final VoidCallback onReturnToLogin;
+
+  @override
+  Widget build(BuildContext context) {
+    return _PageScaffold(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          WhitespaceWrappedText(
+            '이메일을 확인해 주세요',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          const SizedBox(height: 12),
+          WhitespaceWrappedText(
+            '인증 링크를 다음 이메일로 보냈어요.',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 24),
+          _SectionCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  email,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                WhitespaceWrappedText(
+                  '메일의 링크를 확인한 뒤 로그인해 주세요.',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: onReturnToLogin,
+                    child: const Text('로그인으로 돌아가기'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
