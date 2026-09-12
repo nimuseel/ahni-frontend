@@ -22,9 +22,17 @@ class AuthenticationRequired extends OnboardingState {
 }
 
 class EmailVerificationPending extends OnboardingState {
-  const EmailVerificationPending({required this.email});
+  const EmailVerificationPending({
+    required this.email,
+    this.message,
+    this.isSubmitting = false,
+    this.isError = false,
+  });
 
   final String email;
+  final String? message;
+  final bool isSubmitting;
+  final bool isError;
 }
 
 class RegistrationRequired extends OnboardingState {
@@ -124,6 +132,26 @@ class OnboardingController extends ChangeNotifier {
         const AuthenticationRequired(
           message: '계정을 만들지 못했습니다. 잠시 후 다시 시도해 주세요.',
         ),
+      );
+    }
+  }
+
+  Future<void> resendConfirmation() async {
+    final current = _state;
+    if (current is! EmailVerificationPending || current.isSubmitting) return;
+    _setState(
+      EmailVerificationPending(email: current.email, isSubmitting: true),
+    );
+    try {
+      await _auth.resendSignUpConfirmation(current.email);
+      _completeResend(current.email, '인증 메일을 다시 보냈어요.');
+    } on AuthFailure catch (failure) {
+      _completeResend(current.email, failure.userMessage, isError: true);
+    } on Object catch (_) {
+      _completeResend(
+        current.email,
+        '인증 메일을 다시 보내지 못했습니다. 잠시 후 다시 시도해 주세요.',
+        isError: true,
       );
     }
   }
@@ -228,6 +256,18 @@ class OnboardingController extends ChangeNotifier {
     await _auth.signOut();
     _setState(
       const AuthenticationRequired(message: '로그인이 만료되었습니다. 다시 로그인해 주세요.'),
+    );
+  }
+
+  void _completeResend(String email, String message, {bool isError = false}) {
+    final current = _state;
+    if (current is! EmailVerificationPending || current.email != email) return;
+    _setState(
+      EmailVerificationPending(
+        email: email,
+        message: message,
+        isError: isError,
+      ),
     );
   }
 

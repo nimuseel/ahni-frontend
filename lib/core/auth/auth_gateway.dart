@@ -23,6 +23,8 @@ abstract interface class AuthGateway {
 
   Future<AuthSession?> signUp(String email, String password);
 
+  Future<void> resendSignUpConfirmation(String email);
+
   Future<void> signOut();
 }
 
@@ -64,6 +66,15 @@ class SupabaseAuthGateway implements AuthGateway {
         emailRedirectTo: 'com.ahni.mobile://login-callback/',
       );
       return _mapSession(response.session);
+    } on AuthException catch (error) {
+      throw AuthFailure(_safeAuthMessage(error.code));
+    }
+  }
+
+  @override
+  Future<void> resendSignUpConfirmation(String email) async {
+    try {
+      await _client.auth.resend(type: OtpType.signup, email: email);
     } on AuthException catch (error) {
       throw AuthFailure(_safeAuthMessage(error.code));
     }
