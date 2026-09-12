@@ -221,23 +221,6 @@ class _AuthenticationViewState extends State<_AuthenticationView> {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.only(top: 2),
-                  child: Icon(Icons.lock_outline, size: 18),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: WhitespaceWrappedText(
-                    '로그인 정보는 기기의 보안 저장소에 보관합니다.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),
