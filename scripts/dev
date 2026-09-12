@@ -4,6 +4,13 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
+if [[ -f "$repo_root/.env.local" ]]; then
+  set -a
+  # shellcheck source=/dev/null
+  source "$repo_root/.env.local"
+  set +a
+fi
+
 : "${SUPABASE_URL:?SUPABASE_URL 환경변수를 설정해 주세요.}"
 : "${SUPABASE_PUBLISHABLE_KEY:?SUPABASE_PUBLISHABLE_KEY 환경변수를 설정해 주세요.}"
 : "${API_BASE_URL:?API_BASE_URL 환경변수를 설정해 주세요.}"
