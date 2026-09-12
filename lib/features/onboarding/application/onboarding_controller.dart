@@ -19,6 +19,12 @@ class AuthenticationRequired extends OnboardingState {
   final bool isSubmitting;
 }
 
+class EmailVerificationPending extends OnboardingState {
+  const EmailVerificationPending({required this.email});
+
+  final String email;
+}
+
 class RegistrationRequired extends OnboardingState {
   const RegistrationRequired({
     required this.departments,
@@ -95,13 +101,10 @@ class OnboardingController extends ChangeNotifier {
   Future<void> signUp(String email, String password) async {
     _setState(const AuthenticationRequired(isSubmitting: true));
     try {
-      final session = await _auth.signUp(email.trim(), password);
+      final normalizedEmail = email.trim();
+      final session = await _auth.signUp(normalizedEmail, password);
       if (session == null) {
-        _setState(
-          const AuthenticationRequired(
-            message: '인증 메일을 보냈습니다. 메일의 링크를 확인해 주세요.',
-          ),
-        );
+        _setState(EmailVerificationPending(email: normalizedEmail));
         return;
       }
       await _loadProfile(session);
@@ -159,6 +162,10 @@ class OnboardingController extends ChangeNotifier {
 
   Future<void> signOut() async {
     await _auth.signOut();
+    _setState(const AuthenticationRequired());
+  }
+
+  void returnToAuthentication() {
     _setState(const AuthenticationRequired());
   }
 
