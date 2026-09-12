@@ -41,7 +41,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
         state: state,
       ),
       EmailVerificationPending state => _EmailVerificationPendingView(
-        email: state.email,
+        state: state,
+        onResend: widget.controller.resendConfirmation,
         onReturnToLogin: widget.controller.returnToAuthentication,
       ),
       ProfileLoading() => const _LoadingView(),
@@ -63,11 +64,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
 class _EmailVerificationPendingView extends StatelessWidget {
   const _EmailVerificationPendingView({
-    required this.email,
+    required this.state,
+    required this.onResend,
     required this.onReturnToLogin,
   });
 
-  final String email;
+  final EmailVerificationPending state;
+  final Future<void> Function() onResend;
   final VoidCallback onReturnToLogin;
 
   @override
@@ -91,7 +94,7 @@ class _EmailVerificationPendingView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  email,
+                  state.email,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleMedium,
@@ -101,12 +104,28 @@ class _EmailVerificationPendingView extends StatelessWidget {
                   '메일의 링크를 확인한 뒤 로그인해 주세요.',
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
+                if (state.message case final message?) ...[
+                  const SizedBox(height: 16),
+                  _StatusMessage(message: message, isError: state.isError),
+                ],
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
                     onPressed: onReturnToLogin,
                     child: const Text('로그인으로 돌아가기'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    key: const Key('resend-confirmation'),
+                    onPressed: state.isSubmitting ? null : onResend,
+                    child: WhitespaceWrappedText(
+                      state.isSubmitting ? '다시 보내는 중…' : '인증 메일 다시 보내기',
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
               ],

@@ -15,6 +15,9 @@ class FakeAuthGateway implements AuthGateway {
   AuthSession? signUpResult;
   Object? signInError;
   Object? signUpError;
+  Object? resendError;
+  Future<void> Function(String email)? resendHandler;
+  String? lastResendEmail;
   var signOutCalls = 0;
 
   @override
@@ -37,6 +40,13 @@ class FakeAuthGateway implements AuthGateway {
   Future<AuthSession?> signUp(String email, String password) async {
     if (signUpError case final error?) throw error;
     return currentSession = signUpResult;
+  }
+
+  @override
+  Future<void> resendSignUpConfirmation(String email) async {
+    lastResendEmail = email;
+    if (resendError case final error?) throw error;
+    await resendHandler?.call(email);
   }
 
   @override

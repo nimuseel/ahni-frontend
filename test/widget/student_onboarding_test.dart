@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:ahni_mobile/app/ahni_app.dart';
+import 'package:ahni_mobile/core/auth/auth_gateway.dart';
 import 'package:ahni_mobile/core/config/app_environment.dart';
 import 'package:ahni_mobile/core/network/student_api.dart';
 import 'package:ahni_mobile/features/onboarding/application/onboarding_controller.dart';
@@ -56,10 +57,11 @@ void main() {
   testWidgets('validates school email and shows email confirmation pending', (
     tester,
   ) async {
-    final controller = OnboardingController(
-      auth: FakeAuthGateway(),
-      api: FakeStudentApi(),
-    );
+    final resendResult = Completer<void>();
+    final auth = FakeAuthGateway()..resendHandler = (_) => resendResult.future;
+    final controller = OnboardingController(auth: auth, api: FakeStudentApi());
+    addTearDown(controller.dispose);
+    addTearDown(auth.dispose);
 
     await tester.pumpWidget(
       AhniApp(environment: AppEnvironment.development, controller: controller),
@@ -118,6 +120,20 @@ void main() {
       findWhitespaceWrappedText('메일의 링크를 확인한 뒤 로그인해 주세요.'),
       findsOneWidget,
     );
+    expect(find.byKey(const Key('auth-password')), findsNothing);
+
+    final resendButton = find.byKey(const Key('resend-confirmation'));
+    expect(findWhitespaceWrappedText('인증 메일 다시 보내기'), findsOneWidget);
+    await tester.tap(resendButton);
+    await tester.pump();
+
+    expect(auth.lastResendEmail, 'student@inha.edu');
+    expect(tester.widget<TextButton>(resendButton).onPressed, isNull);
+    expect(findWhitespaceWrappedText('다시 보내는 중…'), findsOneWidget);
+
+    resendResult.complete();
+    await tester.pumpAndSettle();
+    expect(findWhitespaceWrappedText('인증 메일을 다시 보냈어요.'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(FilledButton, '로그인으로 돌아가기'));
     await tester.pump();
@@ -174,6 +190,43 @@ void main() {
       fieldsAfterSignIn.every((field) => field.controller.text.isEmpty),
       isTrue,
     );
+  });
+
+  testWidgets('resend rate-limit feedback remains readable with large text', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(320, 568));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final auth = FakeAuthGateway()
+      ..resendError = const AuthFailure('요청이 많습니다. 잠시 후 다시 시도해 주세요.');
+    final controller = OnboardingController(auth: auth, api: FakeStudentApi());
+    addTearDown(controller.dispose);
+    addTearDown(auth.dispose);
+
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+        child: AhniApp(
+          environment: AppEnvironment.development,
+          controller: controller,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await controller.signUp('student@inha.edu', 'password123');
+    await tester.pump();
+
+    final resendButton = find.byKey(const Key('resend-confirmation'));
+    await tester.ensureVisible(resendButton);
+    await tester.tap(resendButton);
+    await tester.pumpAndSettle();
+
+    expect(
+      findWhitespaceWrappedText('요청이 많습니다. 잠시 후 다시 시도해 주세요.'),
+      findsOneWidget,
+    );
+    expect(find.byType(Scrollable), findsWidgets);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('registers a missing student profile', (tester) async {

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:ahni_mobile/core/auth/auth_gateway.dart';
 import 'package:ahni_mobile/core/network/student_api.dart';
 import 'package:ahni_mobile/features/onboarding/application/onboarding_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -92,6 +93,71 @@ void main() {
 
     expect(controller.state, isA<RegistrationRequired>());
   });
+
+  test(
+    'resending confirmation keeps the pending email and shows success',
+    () async {
+      final auth = FakeAuthGateway();
+      final controller = OnboardingController(
+        auth: auth,
+        api: FakeStudentApi(),
+      );
+      addTearDown(controller.dispose);
+      addTearDown(auth.dispose);
+
+      await controller.signUp('student@inha.edu', 'password123');
+      await controller.resendConfirmation();
+
+      final state = controller.state as EmailVerificationPending;
+      expect(auth.lastResendEmail, 'student@inha.edu');
+      expect(state.email, 'student@inha.edu');
+      expect(state.message, '인증 메일을 다시 보냈어요.');
+    },
+  );
+
+  test(
+    'resend failure keeps the pending email and shows safe feedback',
+    () async {
+      final auth = FakeAuthGateway()
+        ..resendError = const AuthFailure('요청이 많습니다. 잠시 후 다시 시도해 주세요.');
+      final controller = OnboardingController(
+        auth: auth,
+        api: FakeStudentApi(),
+      );
+      addTearDown(controller.dispose);
+      addTearDown(auth.dispose);
+
+      await controller.signUp('student@inha.edu', 'password123');
+      await controller.resendConfirmation();
+
+      final state = controller.state as EmailVerificationPending;
+      expect(state.email, 'student@inha.edu');
+      expect(state.message, '요청이 많습니다. 잠시 후 다시 시도해 주세요.');
+      expect(state.isError, isTrue);
+    },
+  );
+
+  test(
+    'resend completion does not restore a pending screen after leaving',
+    () async {
+      final result = Completer<void>();
+      final auth = FakeAuthGateway()..resendHandler = (_) => result.future;
+      final controller = OnboardingController(
+        auth: auth,
+        api: FakeStudentApi(),
+      );
+      addTearDown(controller.dispose);
+      addTearDown(auth.dispose);
+
+      await controller.signUp('student@inha.edu', 'password123');
+      final resend = controller.resendConfirmation();
+      controller.returnToAuthentication();
+      result.complete();
+      await resend;
+
+      expect(controller.state, isA<AuthenticationRequired>());
+    },
+  );
 
   test('a recoverable profile failure can retry successfully', () async {
     var requests = 0;
