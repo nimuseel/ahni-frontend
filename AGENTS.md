@@ -20,7 +20,7 @@ scripts/   repeatable verification commands
 
 | Task | Read first |
 | --- | --- |
-| Add a screen | `ARCHITECTURE.md`, `docs/development/testing.md` |
+| Add a screen | `DESIGN.md`, `ARCHITECTURE.md`, `docs/development/testing.md` |
 | Add academic calculation | `docs/domain/index.md`, `test/` |
 | Change API integration | `docs/development/api-contract.md`, `docs/reliability/errors.md` |
 | Change permissions | `docs/security/README.md` |
@@ -47,6 +47,8 @@ scripts/   repeatable verification commands
 - Student-owned data is never displayed from an unverified account scope.
 - Network, location, notification, and file permissions are requested at the point of need.
 - Every user-visible behavior has a widget or integration test; pure rules have unit tests.
+- Korean headings and explanatory copy use `WhitespaceWrappedText` so wrapping occurs at whitespace boundaries; identifiers and other unbroken values define their own overflow behavior.
+- Typography follows `DESIGN.md`; do not enlarge display text outside the documented type scale.
 - `./scripts/verify` passes before completion.
 
 ## Definition of Done

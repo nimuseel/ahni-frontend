@@ -65,10 +65,10 @@ class AhniApp extends StatelessWidget {
         textTheme: const TextTheme(
           headlineMedium: TextStyle(
             color: primaryText,
-            fontSize: 28,
+            fontSize: 24,
             fontWeight: FontWeight.w700,
-            height: 36 / 28,
-            letterSpacing: -0.5,
+            height: 32 / 24,
+            letterSpacing: -0.3,
           ),
           bodyLarge: TextStyle(color: secondaryText, fontSize: 16, height: 1.5),
           bodySmall: TextStyle(

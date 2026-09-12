@@ -1,4 +1,5 @@
 import 'package:ahni_mobile/core/network/student_api.dart';
+import 'package:ahni_mobile/core/presentation/whitespace_wrapped_text.dart';
 import 'package:ahni_mobile/features/onboarding/application/onboarding_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -131,12 +132,15 @@ class _AuthenticationViewState extends State<_AuthenticationView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            WhitespaceWrappedText(
               '학사 준비, 함께 이어가요',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 12),
-            Text(description, style: Theme.of(context).textTheme.bodyLarge),
+            WhitespaceWrappedText(
+              description,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
             const SizedBox(height: 24),
             _SectionCard(
               key: const Key('auth-card'),
@@ -209,7 +213,7 @@ class _AuthenticationViewState extends State<_AuthenticationView> {
                   ),
                   if (_isSignUp) ...[
                     const SizedBox(height: 12),
-                    Text(
+                    WhitespaceWrappedText(
                       '가입하면 학교 이메일로 인증 링크를 보내드려요.',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
@@ -227,7 +231,7 @@ class _AuthenticationViewState extends State<_AuthenticationView> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
+                  child: WhitespaceWrappedText(
                     '로그인 정보는 기기의 보안 저장소에 보관합니다.',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
@@ -300,12 +304,12 @@ class _RegistrationViewState extends State<_RegistrationView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            WhitespaceWrappedText(
               '학생 정보를 알려주세요',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 12),
-            Text(
+            WhitespaceWrappedText(
               '학과, 입학연도와 학적 상태는 맞춤 학사 안내에 사용해요.',
               style: Theme.of(context).textTheme.bodyLarge,
             ),
@@ -520,7 +524,7 @@ class _LoadingView extends StatelessWidget {
           children: [
             const CircularProgressIndicator(),
             const SizedBox(height: 20),
-            Text(
+            WhitespaceWrappedText(
               '학생 정보를 불러오는 중이에요…',
               style: Theme.of(context).textTheme.titleMedium,
             ),
@@ -552,7 +556,7 @@ class _RetryView extends StatelessWidget {
                 color: Theme.of(context).colorScheme.primary,
               ),
               const SizedBox(height: 16),
-              Text(
+              WhitespaceWrappedText(
                 message,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge,
@@ -784,7 +788,7 @@ class _StatusMessage extends StatelessWidget {
           color: isError ? colorScheme.errorContainer : const Color(0xFFEAF2FC),
           borderRadius: BorderRadius.circular(6),
         ),
-        child: Text(
+        child: WhitespaceWrappedText(
           message,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: isError

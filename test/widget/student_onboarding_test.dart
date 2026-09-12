@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/onboarding_fakes.dart';
+import '../support/whitespace_wrapped_text_finder.dart';
 
 void main() {
   testWidgets('shows loading, actionable error, and retry success', (
@@ -29,7 +30,7 @@ void main() {
       AhniApp(environment: AppEnvironment.development, controller: controller),
     );
     await tester.pump();
-    final loadingText = find.text('학생 정보를 불러오는 중이에요…');
+    final loadingText = findWhitespaceWrappedText('학생 정보를 불러오는 중이에요…');
     expect(loadingText, findsOneWidget);
     expect(tester.getCenter(loadingText).dy, greaterThan(250));
 
@@ -40,7 +41,10 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(find.text('학생 정보를 불러오지 못했습니다.\n다시 시도해 주세요.'), findsOneWidget);
+    expect(
+      findWhitespaceWrappedText('학생 정보를 불러오지 못했습니다.\n다시 시도해 주세요.'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.widgetWithText(FilledButton, '다시 시도'));
     await tester.pumpAndSettle();
@@ -63,8 +67,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('학생 포털'), findsNothing);
-    expect(find.text('학사 준비, 함께 이어가요'), findsOneWidget);
-    expect(find.text('학교 이메일로 로그인하면 내 학사 정보를 편하게 확인할 수 있어요.'), findsOneWidget);
+    expect(findWhitespaceWrappedText('학사 준비, 함께 이어가요'), findsOneWidget);
+    expect(
+      findWhitespaceWrappedText('학교 이메일로 로그인하면 내 학사 정보를 편하게 확인할 수 있어요.'),
+      findsOneWidget,
+    );
     await tester.enterText(
       find.byKey(const Key('auth-email')),
       'student@gmail.com',
@@ -79,7 +86,10 @@ void main() {
 
     await tester.tap(find.byKey(const Key('auth-sign-up-segment')));
     await tester.pump();
-    expect(find.text('학교 이메일로 가입한 뒤 학생 정보를 등록할 수 있어요.'), findsOneWidget);
+    expect(
+      findWhitespaceWrappedText('학교 이메일로 가입한 뒤 학생 정보를 등록할 수 있어요.'),
+      findsOneWidget,
+    );
     expect(
       tester
           .widget<EditableText>(find.byType(EditableText).first)
@@ -105,7 +115,10 @@ void main() {
       (controller.state as AuthenticationRequired).message,
       '인증 메일을 보냈습니다. 메일의 링크를 확인해 주세요.',
     );
-    expect(find.text('인증 메일을 보냈습니다. 메일의 링크를 확인해 주세요.'), findsOneWidget);
+    expect(
+      findWhitespaceWrappedText('인증 메일을 보냈습니다. 메일의 링크를 확인해 주세요.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('auth modes do not share credentials or feedback', (
@@ -152,12 +165,18 @@ void main() {
     await tester.ensureVisible(signUpButton);
     await tester.tap(signUpButton);
     await tester.pumpAndSettle();
-    expect(find.text('인증 메일을 보냈습니다. 메일의 링크를 확인해 주세요.'), findsOneWidget);
+    expect(
+      findWhitespaceWrappedText('인증 메일을 보냈습니다. 메일의 링크를 확인해 주세요.'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const Key('auth-sign-in-segment')));
     await tester.pump();
 
-    expect(find.text('인증 메일을 보냈습니다. 메일의 링크를 확인해 주세요.'), findsNothing);
+    expect(
+      findWhitespaceWrappedText('인증 메일을 보냈습니다. 메일의 링크를 확인해 주세요.'),
+      findsNothing,
+    );
     final fieldsAfterSignIn = tester.widgetList<EditableText>(
       find.byType(EditableText),
     );
@@ -188,8 +207,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('프로필 설정'), findsNothing);
-    expect(find.text('학생 정보를 알려주세요'), findsOneWidget);
-    expect(find.text('학과, 입학연도와 학적 상태는 맞춤 학사 안내에 사용해요.'), findsOneWidget);
+    expect(findWhitespaceWrappedText('학생 정보를 알려주세요'), findsOneWidget);
+    expect(
+      findWhitespaceWrappedText('학과, 입학연도와 학적 상태는 맞춤 학사 안내에 사용해요.'),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('registration-card')), findsOneWidget);
     expect(find.byKey(const Key('enrollment-status-segments')), findsOneWidget);
 
@@ -232,8 +254,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('학사 준비, 함께 이어가요'), findsOneWidget);
-    expect(find.text('학교 이메일로 로그인하면 내 학사 정보를 편하게 확인할 수 있어요.'), findsOneWidget);
+    expect(findWhitespaceWrappedText('학사 준비, 함께 이어가요'), findsOneWidget);
+    expect(
+      findWhitespaceWrappedText('학교 이메일로 로그인하면 내 학사 정보를 편하게 확인할 수 있어요.'),
+      findsOneWidget,
+    );
     expect(find.byType(Scrollable), findsWidgets);
     expect(tester.takeException(), isNull);
   });

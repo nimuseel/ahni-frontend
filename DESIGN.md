@@ -34,7 +34,7 @@ Only status semantics may add colors beyond this set in future feature branches.
 ### Type
 
 - Use the platform system sans-serif so Korean and Latin text render consistently without a network font dependency.
-- Display: 28/36, weight 700.
+- Display: 24/32, weight 700.
 - Title: 20/28, weight 700.
 - Body: 16/24, weight 400.
 - Supporting: 14/20, weight 400.
@@ -65,6 +65,7 @@ Only status semantics may add colors beyond this set in future feature branches.
 - Neutral canvas, dark system status icons, and a restrained text-first top bar.
 - The environment label is supporting developer information, not a user-facing production badge.
 - Keep onboarding copy warm, specific, and concise. Do not repeat the app or screen purpose in an eyebrow label.
+- Wrap Korean headings and explanatory copy only at whitespace boundaries with `WhitespaceWrappedText`; never add manual line breaks for a viewport. Identifiers and other unbroken values must use explicit overflow handling instead.
 
 ### Segmented control
 

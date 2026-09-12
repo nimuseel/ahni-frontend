@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/onboarding_fakes.dart';
+import '../support/whitespace_wrapped_text_finder.dart';
 
 void main() {
   testWidgets('renders the AHNI student authentication shell', (tester) async {
@@ -18,7 +19,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('AHNI'), findsOneWidget);
-    expect(find.text('학사 준비, 함께 이어가요'), findsOneWidget);
+    expect(findWhitespaceWrappedText('학사 준비, 함께 이어가요'), findsOneWidget);
     expect(find.text('학생 포털'), findsNothing);
     expect(find.text('학교 이메일'), findsOneWidget);
     expect(find.byKey(const Key('auth-mode-switch')), findsOneWidget);
@@ -28,6 +29,7 @@ void main() {
     final theme = Theme.of(tester.element(find.byType(Scaffold)));
 
     expect(theme.colorScheme.primary, const Color(0xFF1558A6));
+    expect(theme.textTheme.headlineMedium!.fontSize, 24);
     expect(appBar.titleSpacing, 24);
     expect(theme.appBarTheme.titleTextStyle!.fontSize, 20);
     expect(theme.appBarTheme.titleTextStyle!.height, 1.4);
@@ -56,7 +58,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('학사 준비, 함께 이어가요'), findsOneWidget);
+    expect(findWhitespaceWrappedText('학사 준비, 함께 이어가요'), findsOneWidget);
     expect(find.byType(Scrollable), findsWidgets);
     expect(tester.takeException(), isNull);
   });

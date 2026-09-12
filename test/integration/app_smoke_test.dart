@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/onboarding_fakes.dart';
+import '../support/whitespace_wrapped_text_finder.dart';
 
 void main() {
   testWidgets('launches the AHNI onboarding entry point', (tester) async {
@@ -18,7 +19,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('AHNI'), findsOneWidget);
-    expect(find.text('학사 준비, 함께 이어가요'), findsOneWidget);
+    expect(findWhitespaceWrappedText('학사 준비, 함께 이어가요'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, '로그인'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
