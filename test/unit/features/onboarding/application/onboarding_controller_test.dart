@@ -71,6 +71,28 @@ void main() {
     expect(state.email, 'student@inha.edu');
   });
 
+  test('confirmed session continues student onboarding', () async {
+    final auth = FakeAuthGateway();
+    final api = FakeStudentApi();
+    api.getProfileHandler = (_) => Future.error(
+      const StudentApiFailure(
+        StudentApiFailureKind.studentNotFound,
+        '학생 정보를 등록해 주세요.',
+      ),
+    );
+    api.getDepartmentsHandler = () async => const [testDepartment];
+    final controller = OnboardingController(auth: auth, api: api);
+    addTearDown(controller.dispose);
+    addTearDown(auth.dispose);
+
+    await controller.initialize();
+    await controller.signUp('student@inha.edu', 'password123');
+    auth.emitSignedIn(testSession);
+    await pumpEventQueue();
+
+    expect(controller.state, isA<RegistrationRequired>());
+  });
+
   test('a recoverable profile failure can retry successfully', () async {
     var requests = 0;
     final api = FakeStudentApi()

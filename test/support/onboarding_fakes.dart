@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:ahni_mobile/core/auth/auth_gateway.dart';
 import 'package:ahni_mobile/core/network/student_api.dart';
 
 class FakeAuthGateway implements AuthGateway {
   FakeAuthGateway({this.currentSession});
+
+  final _signedInSessions = StreamController<AuthSession>.broadcast(sync: true);
 
   @override
   AuthSession? currentSession;
@@ -12,6 +16,16 @@ class FakeAuthGateway implements AuthGateway {
   Object? signInError;
   Object? signUpError;
   var signOutCalls = 0;
+
+  @override
+  Stream<AuthSession> get signedInSessions => _signedInSessions.stream;
+
+  void emitSignedIn(AuthSession session) {
+    currentSession = session;
+    _signedInSessions.add(session);
+  }
+
+  Future<void> dispose() => _signedInSessions.close();
 
   @override
   Future<AuthSession?> signIn(String email, String password) async {
