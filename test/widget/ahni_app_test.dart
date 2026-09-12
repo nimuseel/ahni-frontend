@@ -20,6 +20,8 @@ void main() {
     expect(find.text('AHNI'), findsOneWidget);
     expect(find.text('학사 준비를 이어가세요'), findsOneWidget);
     expect(find.text('학교 이메일'), findsOneWidget);
+    expect(find.byKey(const Key('auth-mode-switch')), findsOneWidget);
+    expect(find.byKey(const Key('auth-card')), findsOneWidget);
 
     final appBar = tester.widget<AppBar>(find.byType(AppBar));
     final theme = Theme.of(tester.element(find.byType(Scaffold)));
@@ -28,6 +30,14 @@ void main() {
     expect(appBar.titleSpacing, 24);
     expect(theme.appBarTheme.titleTextStyle!.fontSize, 20);
     expect(theme.appBarTheme.titleTextStyle!.height, 1.4);
+    expect(
+      theme.appBarTheme.systemOverlayStyle?.statusBarIconBrightness,
+      Brightness.dark,
+    );
+    expect(
+      theme.appBarTheme.systemOverlayStyle?.statusBarBrightness,
+      Brightness.light,
+    );
   });
 
   testWidgets('keeps authentication usable on a compact screen', (

@@ -75,18 +75,22 @@ void main() {
     await tester.pump();
     expect(find.text('인하대학교 이메일(@inha.edu)을 입력해 주세요.'), findsOneWidget);
 
-    await tester.tap(find.text('가입하기'));
+    await tester.tap(find.byKey(const Key('auth-sign-up-segment')));
     await tester.pump();
-    await tester.enterText(
-      find.byKey(const Key('auth-email')),
-      'student@inha.edu',
-    );
     expect(
       tester
           .widget<EditableText>(find.byType(EditableText).first)
           .controller
           .text,
+      isEmpty,
+    );
+    await tester.enterText(
+      find.byKey(const Key('auth-email')),
       'student@inha.edu',
+    );
+    await tester.enterText(
+      find.byKey(const Key('auth-password')),
+      'password123',
     );
     final signUpButton = find.widgetWithText(FilledButton, '계정 만들기');
     await tester.ensureVisible(signUpButton);
@@ -99,6 +103,65 @@ void main() {
       '인증 메일을 보냈습니다. 메일의 링크를 확인해 주세요.',
     );
     expect(find.text('인증 메일을 보냈습니다. 메일의 링크를 확인해 주세요.'), findsOneWidget);
+  });
+
+  testWidgets('auth modes do not share credentials or feedback', (
+    tester,
+  ) async {
+    final controller = OnboardingController(
+      auth: FakeAuthGateway(),
+      api: FakeStudentApi(),
+    );
+
+    await tester.pumpWidget(
+      AhniApp(environment: AppEnvironment.development, controller: controller),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('auth-email')),
+      'student@inha.edu',
+    );
+    await tester.enterText(
+      find.byKey(const Key('auth-password')),
+      'password123',
+    );
+    await tester.tap(find.byKey(const Key('auth-sign-up-segment')));
+    await tester.pump();
+
+    final fieldsAfterSignUp = tester.widgetList<EditableText>(
+      find.byType(EditableText),
+    );
+    expect(
+      fieldsAfterSignUp.every((field) => field.controller.text.isEmpty),
+      isTrue,
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('auth-email')),
+      'student@inha.edu',
+    );
+    await tester.enterText(
+      find.byKey(const Key('auth-password')),
+      'password123',
+    );
+    final signUpButton = find.widgetWithText(FilledButton, '계정 만들기');
+    await tester.ensureVisible(signUpButton);
+    await tester.tap(signUpButton);
+    await tester.pumpAndSettle();
+    expect(find.text('인증 메일을 보냈습니다. 메일의 링크를 확인해 주세요.'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('auth-sign-in-segment')));
+    await tester.pump();
+
+    expect(find.text('인증 메일을 보냈습니다. 메일의 링크를 확인해 주세요.'), findsNothing);
+    final fieldsAfterSignIn = tester.widgetList<EditableText>(
+      find.byType(EditableText),
+    );
+    expect(
+      fieldsAfterSignIn.every((field) => field.controller.text.isEmpty),
+      isTrue,
+    );
   });
 
   testWidgets('registers a missing student profile', (tester) async {
@@ -122,6 +185,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('학생 정보를\n등록해 주세요'), findsOneWidget);
+    expect(find.byKey(const Key('registration-card')), findsOneWidget);
+    expect(find.byKey(const Key('enrollment-status-segments')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('department-field')));
     await tester.pumpAndSettle();
@@ -139,6 +204,8 @@ void main() {
     );
     expect(api.lastRegistration?.enrollmentStatus, 'ENROLLED');
     expect(find.text('등록한 학생 정보를 확인하세요.'), findsOneWidget);
+    expect(find.byKey(const Key('profile-summary')), findsOneWidget);
+    expect(find.byKey(const Key('student-information-card')), findsOneWidget);
   });
 
   testWidgets('auth form remains usable with large text', (tester) async {

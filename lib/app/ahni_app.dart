@@ -2,6 +2,7 @@ import 'package:ahni_mobile/core/config/app_environment.dart';
 import 'package:ahni_mobile/features/onboarding/application/onboarding_controller.dart';
 import 'package:ahni_mobile/features/onboarding/presentation/onboarding_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class AhniApp extends StatelessWidget {
   const AhniApp({
@@ -16,6 +17,11 @@ class AhniApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const accent = Color(0xFF1558A6);
+    const accentSoft = Color(0xFFEAF2FC);
+    const canvas = Color(0xFFF7F8FA);
+    const primaryText = Color(0xFF18202A);
+    const secondaryText = Color(0xFF5B6470);
+    const divider = Color(0xFFDDE2E8);
     final colorScheme =
         ColorScheme.fromSeed(
           seedColor: accent,
@@ -23,8 +29,15 @@ class AhniApp extends StatelessWidget {
           surface: Colors.white,
         ).copyWith(
           primary: accent,
-          onSurface: const Color(0xFF18202A),
-          outline: const Color(0xFFDDE2E8),
+          onPrimary: Colors.white,
+          primaryContainer: accentSoft,
+          onPrimaryContainer: primaryText,
+          onSurface: primaryText,
+          onSurfaceVariant: secondaryText,
+          outline: divider,
+          surfaceContainerLowest: Colors.white,
+          surfaceContainer: canvas,
+          surfaceContainerHighest: const Color(0xFFEEF1F4),
         );
 
     return MaterialApp(
@@ -33,12 +46,16 @@ class AhniApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: colorScheme,
-        scaffoldBackgroundColor: const Color(0xFFF7F8FA),
+        scaffoldBackgroundColor: canvas,
         useMaterial3: true,
         appBarTheme: const AppBarTheme(
-          foregroundColor: Color(0xFF18202A),
+          backgroundColor: canvas,
+          foregroundColor: primaryText,
+          surfaceTintColor: Colors.transparent,
+          systemOverlayStyle: SystemUiOverlayStyle.dark,
+          elevation: 0,
           titleTextStyle: TextStyle(
-            color: Color(0xFF18202A),
+            color: primaryText,
             fontSize: 20,
             fontWeight: FontWeight.w700,
             height: 1.4,
@@ -47,44 +64,58 @@ class AhniApp extends StatelessWidget {
         ),
         textTheme: const TextTheme(
           headlineMedium: TextStyle(
-            color: Color(0xFF18202A),
+            color: primaryText,
             fontSize: 28,
             fontWeight: FontWeight.w700,
             height: 36 / 28,
             letterSpacing: -0.5,
           ),
-          bodyLarge: TextStyle(
-            color: Color(0xFF5B6470),
-            fontSize: 16,
-            height: 1.5,
-          ),
+          bodyLarge: TextStyle(color: secondaryText, fontSize: 16, height: 1.5),
           bodySmall: TextStyle(
-            color: Color(0xFF5B6470),
+            color: secondaryText,
             fontSize: 14,
             height: 20 / 14,
+          ),
+          titleMedium: TextStyle(
+            color: primaryText,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            height: 1.4,
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Colors.white,
+          fillColor: canvas,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 16,
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(6),
-            borderSide: const BorderSide(color: Color(0xFFDDE2E8)),
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(6),
-            borderSide: const BorderSide(color: Color(0xFFDDE2E8)),
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: accent, width: 1.5),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.error),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.error, width: 1.5),
           ),
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
-            minimumSize: const Size(44, 48),
+            minimumSize: const Size(44, 52),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(12),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
