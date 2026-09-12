@@ -18,7 +18,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('AHNI'), findsOneWidget);
-    expect(find.text('학사 준비를 이어가세요'), findsOneWidget);
+    expect(find.text('학사 준비, 함께 이어가요'), findsOneWidget);
+    expect(find.text('학생 포털'), findsNothing);
     expect(find.text('학교 이메일'), findsOneWidget);
     expect(find.byKey(const Key('auth-mode-switch')), findsOneWidget);
     expect(find.byKey(const Key('auth-card')), findsOneWidget);
@@ -55,7 +56,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('학사 준비를 이어가세요'), findsOneWidget);
+    expect(find.text('학사 준비, 함께 이어가요'), findsOneWidget);
     expect(find.byType(Scrollable), findsWidgets);
     expect(tester.takeException(), isNull);
   });

@@ -29,7 +29,7 @@ void main() {
       AhniApp(environment: AppEnvironment.development, controller: controller),
     );
     await tester.pump();
-    final loadingText = find.text('학생 정보를 불러오는 중입니다.');
+    final loadingText = find.text('학생 정보를 불러오는 중이에요…');
     expect(loadingText, findsOneWidget);
     expect(tester.getCenter(loadingText).dy, greaterThan(250));
 
@@ -44,7 +44,8 @@ void main() {
 
     await tester.tap(find.widgetWithText(FilledButton, '다시 시도'));
     await tester.pumpAndSettle();
-    expect(find.text('학사 준비를 이어가세요'), findsOneWidget);
+    expect(find.text('학사 준비를 이어가세요'), findsNothing);
+    expect(find.byKey(const Key('profile-summary')), findsOneWidget);
     expect(find.text('소프트웨어융합공학과'), findsOneWidget);
   });
 
@@ -61,8 +62,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('학사 준비를 이어가세요'), findsOneWidget);
-    expect(find.text('학교 이메일로 로그인해\n내 학사 정보를 확인합니다.'), findsOneWidget);
+    expect(find.text('학생 포털'), findsNothing);
+    expect(find.text('학사 준비, 함께 이어가요'), findsOneWidget);
+    expect(find.text('학교 이메일로 로그인하면 내 학사 정보를 편하게 확인할 수 있어요.'), findsOneWidget);
     await tester.enterText(
       find.byKey(const Key('auth-email')),
       'student@gmail.com',
@@ -77,6 +79,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('auth-sign-up-segment')));
     await tester.pump();
+    expect(find.text('학교 이메일로 가입한 뒤 학생 정보를 등록할 수 있어요.'), findsOneWidget);
     expect(
       tester
           .widget<EditableText>(find.byType(EditableText).first)
@@ -184,7 +187,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('학생 정보를\n등록해 주세요'), findsOneWidget);
+    expect(find.text('프로필 설정'), findsNothing);
+    expect(find.text('학생 정보를 알려주세요'), findsOneWidget);
+    expect(find.text('학과, 입학연도와 학적 상태는 맞춤 학사 안내에 사용해요.'), findsOneWidget);
     expect(find.byKey(const Key('registration-card')), findsOneWidget);
     expect(find.byKey(const Key('enrollment-status-segments')), findsOneWidget);
 
@@ -203,7 +208,7 @@ void main() {
       testDepartment.entityId,
     );
     expect(api.lastRegistration?.enrollmentStatus, 'ENROLLED');
-    expect(find.text('등록한 학생 정보를 확인하세요.'), findsOneWidget);
+    expect(find.text('학사 준비를 이어가세요'), findsNothing);
     expect(find.byKey(const Key('profile-summary')), findsOneWidget);
     expect(find.byKey(const Key('student-information-card')), findsOneWidget);
   });
@@ -227,7 +232,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('학교 이메일로\n로그인해 내\n학사 정보를\n확인합니다.'), findsOneWidget);
+    expect(find.text('학사 준비, 함께 이어가요'), findsOneWidget);
+    expect(find.text('학교 이메일로 로그인하면 내 학사 정보를 편하게 확인할 수 있어요.'), findsOneWidget);
     expect(find.byType(Scrollable), findsWidgets);
     expect(tester.takeException(), isNull);
   });

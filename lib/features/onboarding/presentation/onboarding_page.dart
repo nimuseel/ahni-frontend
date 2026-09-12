@@ -122,13 +122,9 @@ class _AuthenticationViewState extends State<_AuthenticationView> {
   @override
   Widget build(BuildContext context) {
     final isSubmitting = widget.state.isSubmitting;
-    final usesLargeText = MediaQuery.textScalerOf(context).scale(16) >= 24;
-    final description = switch ((_isSignUp, usesLargeText)) {
-      (true, true) => '학교 이메일로\n계정을 만들고\n학생 정보를\n등록합니다.',
-      (true, false) => '학교 이메일로 계정을 만들고\n학생 정보를 등록합니다.',
-      (false, true) => '학교 이메일로\n로그인해 내\n학사 정보를\n확인합니다.',
-      (false, false) => '학교 이메일로 로그인해\n내 학사 정보를 확인합니다.',
-    };
+    final description = _isSignUp
+        ? '학교 이메일로 가입한 뒤 학생 정보를 등록할 수 있어요.'
+        : '학교 이메일로 로그인하면 내 학사 정보를 편하게 확인할 수 있어요.';
     return _PageScaffold(
       child: Form(
         key: _formKey,
@@ -136,15 +132,7 @@ class _AuthenticationViewState extends State<_AuthenticationView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '학생 포털',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '학사 준비를 이어가세요',
+              '학사 준비, 함께 이어가요',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 12),
@@ -222,7 +210,7 @@ class _AuthenticationViewState extends State<_AuthenticationView> {
                   if (_isSignUp) ...[
                     const SizedBox(height: 12),
                     Text(
-                      '가입 후 학교 이메일로 인증 링크를 보내드립니다.',
+                      '가입하면 학교 이메일로 인증 링크를 보내드려요.',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -313,20 +301,12 @@ class _RegistrationViewState extends State<_RegistrationView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '프로필 설정',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '학생 정보를\n등록해 주세요',
+              '학생 정보를 알려주세요',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 12),
             Text(
-              '학과와 입학연도는 맞춤 학사 안내에 사용합니다.',
+              '학과, 입학연도와 학적 상태는 맞춤 학사 안내에 사용해요.',
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 24),
@@ -498,16 +478,6 @@ class _ProfileView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          Text(
-            '학사 준비를 이어가세요',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            '등록한 학생 정보를 확인하세요.',
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-          const SizedBox(height: 24),
           _SectionCard(
             key: const Key('student-information-card'),
             child: Column(
@@ -545,26 +515,16 @@ class _LoadingView extends StatelessWidget {
     return _PageScaffold(
       fillViewport: true,
       child: Center(
-        child: _SectionCard(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              LinearProgressIndicator(
-                minHeight: 4,
-                borderRadius: BorderRadius.circular(2),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                '학생 정보를 불러오는 중입니다.',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '잠시만 기다려 주세요.',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 20),
+            Text(
+              '학생 정보를 불러오는 중이에요…',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ],
         ),
       ),
     );

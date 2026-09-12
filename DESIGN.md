@@ -64,6 +64,7 @@ Only status semantics may add colors beyond this set in future feature branches.
 - Material 3 root with `AHNI` as the semantic application title.
 - Neutral canvas, dark system status icons, and a restrained text-first top bar.
 - The environment label is supporting developer information, not a user-facing production badge.
+- Keep onboarding copy warm, specific, and concise. Do not repeat the app or screen purpose in an eyebrow label.
 
 ### Segmented control
 
@@ -76,6 +77,7 @@ Only status semantics may add colors beyond this set in future feature branches.
 
 - White surface, 20-pixel radius, 20-pixel internal padding, and the declared low shadow.
 - A card groups one complete user task. Nested cards are not allowed.
+- Passive loading indicators are not cards; show them directly on the canvas.
 
 ### Form field
 

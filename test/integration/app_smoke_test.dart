@@ -18,7 +18,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('AHNI'), findsOneWidget);
-    expect(find.text('학사 준비를 이어가세요'), findsOneWidget);
+    expect(find.text('학사 준비, 함께 이어가요'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, '로그인'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
