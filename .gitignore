@@ -4,7 +4,6 @@
 *.pyc
 *.swp
 .DS_Store
-.env.local
 .atom/
 .build/
 .buildlog/
@@ -12,6 +11,9 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+
+.env*
+!.env.example
 
 # IntelliJ related
 *.iml
