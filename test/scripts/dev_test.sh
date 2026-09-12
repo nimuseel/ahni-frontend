@@ -21,7 +21,18 @@ printf '%s\n' \
   > "$temp_dir/bin/flutter"
 chmod +x "$temp_dir/bin/flutter"
 
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'if [[ "${1:-}" == "devices" ]]; then' \
+  '  printf '\''List of devices attached\nemulator-5554\tdevice\n'\''' \
+  'else' \
+  '  printf '\''%s\n'\'' "$@" > "$ADB_ARGS_OUTPUT"' \
+  'fi' \
+  > "$temp_dir/bin/adb"
+chmod +x "$temp_dir/bin/adb"
+
 args_output="$temp_dir/flutter-args"
+adb_args_output="$temp_dir/adb-args"
 env \
   -u APP_ENV \
   -u SUPABASE_URL \
@@ -29,6 +40,7 @@ env \
   -u API_BASE_URL \
   PATH="$temp_dir/bin:$PATH" \
   FLUTTER_ARGS_OUTPUT="$args_output" \
+  ADB_ARGS_OUTPUT="$adb_args_output" \
   "$temp_dir/scripts/dev"
 
 expected_output="$temp_dir/expected-args"
@@ -41,3 +53,14 @@ printf '%s\n' \
   > "$expected_output"
 
 diff -u "$expected_output" "$args_output"
+
+expected_adb_output="$temp_dir/expected-adb-args"
+printf '%s\n' \
+  '-s' \
+  'emulator-5554' \
+  'reverse' \
+  'tcp:8080' \
+  'tcp:8080' \
+  > "$expected_adb_output"
+
+diff -u "$expected_adb_output" "$adb_args_output"
