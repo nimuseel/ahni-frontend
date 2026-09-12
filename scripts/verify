@@ -5,6 +5,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
 bash test/scripts/dev_test.sh
+bash test/scripts/deep_link_config_test.sh
 ./scripts/lint
 ./scripts/typecheck
 ./scripts/test-unit

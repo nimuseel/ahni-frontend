@@ -23,6 +23,8 @@
 			</array>
 		</dict>
 	</array>
+	<key>FlutterDeepLinkingEnabled</key>
+	<false/>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
