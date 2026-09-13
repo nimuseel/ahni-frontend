@@ -141,4 +141,44 @@ void main() {
       ),
     );
   });
+
+  test('registered email conflict explains how to recover', () async {
+    final api = HttpStudentApi(
+      baseUri: Uri.parse('https://api.ahni.test'),
+      client: MockClient(
+        (_) async => http.Response(
+          jsonEncode({
+            'code': 'STUDENT_EMAIL_ALREADY_REGISTERED',
+            'message': 'internal detail',
+          }),
+          409,
+        ),
+      ),
+    );
+
+    expect(
+      () => api.registerProfile(
+        'jwt',
+        const StudentRegistration(
+          primaryDepartmentEntityId: 'department-id',
+          admissionYear: 2024,
+          enrollmentStatus: 'ENROLLED',
+        ),
+      ),
+      throwsA(
+        isA<StudentApiFailure>()
+            .having(
+              (failure) => failure.kind,
+              'kind',
+              StudentApiFailureKind.validation,
+            )
+            .having(
+              (failure) => failure.userMessage,
+              'userMessage',
+              '이 이메일로 등록된 학생 정보가 이미 있어요.\n'
+                  '로그아웃 후 다시 로그인해 주세요. 계속되면 관리자에게 문의해 주세요.',
+            ),
+      ),
+    );
+  });
 }
