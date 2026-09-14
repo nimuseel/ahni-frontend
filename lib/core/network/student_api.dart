@@ -204,6 +204,9 @@ class HttpStudentApi implements StudentApi {
     return StudentApiFailure(StudentApiFailureKind.validation, switch (code) {
       'DEPARTMENT_NOT_FOUND' => '학과 정보를 다시 선택해 주세요.',
       'STUDENT_ALREADY_REGISTERED' => '이미 등록된 학생입니다. 다시 불러와 주세요.',
+      'STUDENT_EMAIL_ALREADY_REGISTERED' =>
+        '이 이메일로 등록된 학생 정보가 이미 있어요.\n'
+            '로그아웃 후 다시 로그인해 주세요. 계속되면 관리자에게 문의해 주세요.',
       'INVALID_ENROLLMENT_STATUS' => '재학 또는 휴학 상태를 선택해 주세요.',
       _ => '입력한 정보를 확인해 주세요.',
     });
