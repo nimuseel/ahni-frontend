@@ -159,6 +159,80 @@ void main() {
     },
   );
 
+  test(
+    'password reset request normalizes the email and shows generic success',
+    () async {
+      final auth = FakeAuthGateway();
+      final controller = OnboardingController(
+        auth: auth,
+        api: FakeStudentApi(),
+      );
+      addTearDown(controller.dispose);
+      addTearDown(auth.dispose);
+
+      await controller.requestPasswordReset('  STUDENT@INHA.EDU  ');
+
+      final state = controller.state as AuthenticationRequired;
+      expect(auth.lastPasswordResetEmail, 'student@inha.edu');
+      expect(state.message, '비밀번호 재설정 메일을 보냈어요. 메일함을 확인해 주세요.');
+      expect(state.isError, isFalse);
+    },
+  );
+
+  test('password recovery link opens the new password state', () async {
+    final auth = FakeAuthGateway();
+    final controller = OnboardingController(auth: auth, api: FakeStudentApi());
+    addTearDown(controller.dispose);
+    addTearDown(auth.dispose);
+    await controller.initialize();
+
+    auth.emitPasswordRecovery(testSession);
+    await pumpEventQueue();
+
+    expect(controller.state, isA<PasswordRecoveryRequired>());
+  });
+
+  test('updating the password signs out and returns to login', () async {
+    final auth = FakeAuthGateway();
+    final controller = OnboardingController(auth: auth, api: FakeStudentApi());
+    addTearDown(controller.dispose);
+    addTearDown(auth.dispose);
+    await controller.initialize();
+    auth.emitPasswordRecovery(testSession);
+    await pumpEventQueue();
+
+    await controller.updatePassword('new-password');
+
+    final state = controller.state as AuthenticationRequired;
+    expect(auth.lastUpdatedPassword, 'new-password');
+    expect(auth.signOutCalls, 1);
+    expect(state.message, '비밀번호를 변경했어요. 새 비밀번호로 로그인해 주세요.');
+  });
+
+  test(
+    'password update failure stays on recovery with safe feedback',
+    () async {
+      final auth = FakeAuthGateway()
+        ..updatePasswordError = const AuthFailure('비밀번호를 더 길고 안전하게 입력해 주세요.');
+      final controller = OnboardingController(
+        auth: auth,
+        api: FakeStudentApi(),
+      );
+      addTearDown(controller.dispose);
+      addTearDown(auth.dispose);
+      await controller.initialize();
+      auth.emitPasswordRecovery(testSession);
+      await pumpEventQueue();
+
+      await controller.updatePassword('short');
+
+      final state = controller.state as PasswordRecoveryRequired;
+      expect(state.message, '비밀번호를 더 길고 안전하게 입력해 주세요.');
+      expect(state.isError, isTrue);
+      expect(auth.signOutCalls, 0);
+    },
+  );
+
   test('a recoverable profile failure can retry successfully', () async {
     var requests = 0;
     final api = FakeStudentApi()
