@@ -45,6 +45,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
         onResend: widget.controller.resendConfirmation,
         onReturnToLogin: widget.controller.returnToAuthentication,
       ),
+      PasswordRecoveryRequired state => _PasswordRecoveryView(
+        controller: widget.controller,
+        state: state,
+      ),
       ProfileLoading() => const _LoadingView(),
       RegistrationRequired state => _RegistrationView(
         controller: widget.controller,
@@ -104,6 +108,12 @@ class _EmailVerificationPendingView extends StatelessWidget {
                   '메일의 링크를 확인한 뒤 로그인해 주세요.',
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
+                const SizedBox(height: 8),
+                WhitespaceWrappedText(
+                  '인증 메일이 오지 않으면 입력한 주소와 스팸함을 확인해 주세요. '
+                  '이미 가입한 계정이 있다면 로그인해 주세요.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 if (state.message case final message?) ...[
                   const SizedBox(height: 16),
                   _StatusMessage(message: message, isError: state.isError),
@@ -137,6 +147,125 @@ class _EmailVerificationPendingView extends StatelessWidget {
   }
 }
 
+class _PasswordRecoveryView extends StatefulWidget {
+  const _PasswordRecoveryView({required this.controller, required this.state});
+
+  final OnboardingController controller;
+  final PasswordRecoveryRequired state;
+
+  @override
+  State<_PasswordRecoveryView> createState() => _PasswordRecoveryViewState();
+}
+
+class _PasswordRecoveryViewState extends State<_PasswordRecoveryView> {
+  final _formKey = GlobalKey<FormState>();
+  final _passwordController = TextEditingController();
+  var _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  String? _validatePassword(String? value) {
+    if ((value ?? '').length < 6) return '비밀번호를 6자 이상 입력해 주세요.';
+    return null;
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    await widget.controller.updatePassword(_passwordController.text);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isSubmitting = widget.state.isSubmitting;
+    return _PageScaffold(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            WhitespaceWrappedText(
+              '새 비밀번호를 설정해 주세요',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 12),
+            WhitespaceWrappedText(
+              '앞으로 로그인할 때 사용할 비밀번호를 입력해 주세요.',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 24),
+            _SectionCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (widget.state.message case final message?) ...[
+                    _StatusMessage(
+                      message: message,
+                      isError: widget.state.isError,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  TextFormField(
+                    key: const Key('new-password'),
+                    controller: _passwordController,
+                    enabled: !isSubmitting,
+                    obscureText: _obscurePassword,
+                    autofillHints: const [AutofillHints.newPassword],
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: isSubmitting ? null : (_) => _submit(),
+                    validator: _validatePassword,
+                    decoration: InputDecoration(
+                      labelText: '새 비밀번호',
+                      suffixIcon: IconButton(
+                        tooltip: _obscurePassword ? '비밀번호 표시' : '비밀번호 숨기기',
+                        onPressed: isSubmitting
+                            ? null
+                            : () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      key: const Key('update-password'),
+                      onPressed: isSubmitting ? null : _submit,
+                      child: _ButtonLabel(
+                        isLoading: isSubmitting,
+                        label: '비밀번호 변경',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: isSubmitting
+                          ? null
+                          : widget.controller.cancelPasswordRecovery,
+                      child: const Text('로그인으로 돌아가기'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _AuthenticationView extends StatefulWidget {
   const _AuthenticationView({required this.controller, required this.state});
 
@@ -153,6 +282,7 @@ class _AuthenticationViewState extends State<_AuthenticationView> {
   var _formKey = GlobalKey<FormState>();
   var _isSignUp = false;
   var _obscurePassword = true;
+  String? _passwordResetEmailError;
 
   @override
   void dispose() {
@@ -189,12 +319,22 @@ class _AuthenticationViewState extends State<_AuthenticationView> {
     }
   }
 
+  Future<void> _requestPasswordReset() async {
+    final error = _validateEmail(_emailController.text);
+    if (error != null) {
+      setState(() => _passwordResetEmailError = error);
+      return;
+    }
+    await widget.controller.requestPasswordReset(_emailController.text);
+  }
+
   void _selectMode(bool isSignUp) {
     if (_isSignUp == isSignUp) return;
     setState(() {
       _isSignUp = isSignUp;
       _emailController.clear();
       _passwordController.clear();
+      _passwordResetEmailError = null;
       _formKey = GlobalKey<FormState>();
     });
     widget.controller.clearAuthenticationFeedback();
@@ -234,7 +374,10 @@ class _AuthenticationViewState extends State<_AuthenticationView> {
                   ),
                   const SizedBox(height: 24),
                   if (widget.state.message case final message?) ...[
-                    _StatusMessage(message: message),
+                    _StatusMessage(
+                      message: message,
+                      isError: widget.state.isError,
+                    ),
                     const SizedBox(height: 16),
                   ],
                   TextFormField(
@@ -245,6 +388,12 @@ class _AuthenticationViewState extends State<_AuthenticationView> {
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     autocorrect: false,
+                    forceErrorText: _passwordResetEmailError,
+                    onChanged: (_) {
+                      if (_passwordResetEmailError != null) {
+                        setState(() => _passwordResetEmailError = null);
+                      }
+                    },
                     validator: _validateEmail,
                     decoration: const InputDecoration(
                       labelText: '학교 이메일',
@@ -280,7 +429,18 @@ class _AuthenticationViewState extends State<_AuthenticationView> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  if (!_isSignUp)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        key: const Key('password-reset'),
+                        onPressed: isSubmitting ? null : _requestPasswordReset,
+                        child: const Text('비밀번호를 잊으셨나요?'),
+                      ),
+                    )
+                  else
+                    const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(

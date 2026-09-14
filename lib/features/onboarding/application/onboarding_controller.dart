@@ -15,10 +15,15 @@ class ProfileLoading extends OnboardingState {
 }
 
 class AuthenticationRequired extends OnboardingState {
-  const AuthenticationRequired({this.message, this.isSubmitting = false});
+  const AuthenticationRequired({
+    this.message,
+    this.isSubmitting = false,
+    this.isError = false,
+  });
 
   final String? message;
   final bool isSubmitting;
+  final bool isError;
 }
 
 class EmailVerificationPending extends OnboardingState {
@@ -30,6 +35,18 @@ class EmailVerificationPending extends OnboardingState {
   });
 
   final String email;
+  final String? message;
+  final bool isSubmitting;
+  final bool isError;
+}
+
+class PasswordRecoveryRequired extends OnboardingState {
+  const PasswordRecoveryRequired({
+    this.message,
+    this.isSubmitting = false,
+    this.isError = false,
+  });
+
   final String? message;
   final bool isSubmitting;
   final bool isError;
@@ -68,6 +85,7 @@ class OnboardingController extends ChangeNotifier {
   final StudentApi _api;
   OnboardingState _state = const ProfileLoading();
   StreamSubscription<AuthSession>? _signedInSubscription;
+  StreamSubscription<AuthSession>? _passwordRecoverySubscription;
   bool _initialized = false;
 
   OnboardingState get state => _state;
@@ -79,6 +97,17 @@ class OnboardingController extends ChangeNotifier {
       (session) => unawaited(_loadProfile(session)),
       onError: (Object _) {
         _setState(const RetryableFailure('이메일 인증 상태를 확인하지 못했습니다. 다시 시도해 주세요.'));
+      },
+    );
+    _passwordRecoverySubscription = _auth.passwordRecoverySessions.listen(
+      (_) => _setState(const PasswordRecoveryRequired()),
+      onError: (Object _) {
+        _setState(
+          const AuthenticationRequired(
+            message: '비밀번호 재설정 링크를 확인하지 못했습니다. 다시 시도해 주세요.',
+            isError: true,
+          ),
+        );
       },
     );
     await _routeSession();
@@ -99,17 +128,23 @@ class OnboardingController extends ChangeNotifier {
       final session = await _auth.signIn(email.trim(), password);
       if (session == null) {
         _setState(
-          const AuthenticationRequired(message: '로그인을 완료하지 못했습니다. 다시 시도해 주세요.'),
+          const AuthenticationRequired(
+            message: '로그인을 완료하지 못했습니다. 다시 시도해 주세요.',
+            isError: true,
+          ),
         );
         return;
       }
       await _loadProfile(session);
     } on AuthFailure catch (failure) {
-      _setState(AuthenticationRequired(message: failure.userMessage));
+      _setState(
+        AuthenticationRequired(message: failure.userMessage, isError: true),
+      );
     } on Object catch (_) {
       _setState(
         const AuthenticationRequired(
           message: '인증을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+          isError: true,
         ),
       );
     }
@@ -126,11 +161,14 @@ class OnboardingController extends ChangeNotifier {
       }
       await _loadProfile(session);
     } on AuthFailure catch (failure) {
-      _setState(AuthenticationRequired(message: failure.userMessage));
+      _setState(
+        AuthenticationRequired(message: failure.userMessage, isError: true),
+      );
     } on Object catch (_) {
       _setState(
         const AuthenticationRequired(
           message: '계정을 만들지 못했습니다. 잠시 후 다시 시도해 주세요.',
+          isError: true,
         ),
       );
     }
@@ -154,6 +192,59 @@ class OnboardingController extends ChangeNotifier {
         isError: true,
       );
     }
+  }
+
+  Future<void> requestPasswordReset(String email) async {
+    final normalizedEmail = email.trim().toLowerCase();
+    _setState(const AuthenticationRequired(isSubmitting: true));
+    try {
+      await _auth.sendPasswordResetEmail(normalizedEmail);
+      _setState(
+        const AuthenticationRequired(
+          message: '비밀번호 재설정 메일을 보냈어요. 메일함을 확인해 주세요.',
+        ),
+      );
+    } on AuthFailure catch (failure) {
+      _setState(
+        AuthenticationRequired(message: failure.userMessage, isError: true),
+      );
+    } on Object catch (_) {
+      _setState(
+        const AuthenticationRequired(
+          message: '비밀번호 재설정 메일을 보내지 못했습니다. 잠시 후 다시 시도해 주세요.',
+          isError: true,
+        ),
+      );
+    }
+  }
+
+  Future<void> updatePassword(String password) async {
+    final current = _state;
+    if (current is! PasswordRecoveryRequired || current.isSubmitting) return;
+    _setState(const PasswordRecoveryRequired(isSubmitting: true));
+    try {
+      await _auth.updatePassword(password);
+      await _auth.signOut();
+      _setState(
+        const AuthenticationRequired(message: '비밀번호를 변경했어요. 새 비밀번호로 로그인해 주세요.'),
+      );
+    } on AuthFailure catch (failure) {
+      _setState(
+        PasswordRecoveryRequired(message: failure.userMessage, isError: true),
+      );
+    } on Object catch (_) {
+      _setState(
+        const PasswordRecoveryRequired(
+          message: '비밀번호를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+          isError: true,
+        ),
+      );
+    }
+  }
+
+  Future<void> cancelPasswordRecovery() async {
+    await _auth.signOut();
+    _setState(const AuthenticationRequired());
   }
 
   Future<void> registerProfile(StudentRegistration registration) async {
@@ -255,7 +346,10 @@ class OnboardingController extends ChangeNotifier {
   Future<void> _returnToAuthentication() async {
     await _auth.signOut();
     _setState(
-      const AuthenticationRequired(message: '로그인이 만료되었습니다. 다시 로그인해 주세요.'),
+      const AuthenticationRequired(
+        message: '로그인이 만료되었습니다. 다시 로그인해 주세요.',
+        isError: true,
+      ),
     );
   }
 
@@ -280,6 +374,10 @@ class OnboardingController extends ChangeNotifier {
   void dispose() {
     final subscription = _signedInSubscription;
     if (subscription != null) unawaited(subscription.cancel());
+    final passwordRecoverySubscription = _passwordRecoverySubscription;
+    if (passwordRecoverySubscription != null) {
+      unawaited(passwordRecoverySubscription.cancel());
+    }
     super.dispose();
   }
 }

@@ -7,6 +7,9 @@ class FakeAuthGateway implements AuthGateway {
   FakeAuthGateway({this.currentSession});
 
   final _signedInSessions = StreamController<AuthSession>.broadcast(sync: true);
+  final _passwordRecoverySessions = StreamController<AuthSession>.broadcast(
+    sync: true,
+  );
 
   @override
   AuthSession? currentSession;
@@ -16,19 +19,35 @@ class FakeAuthGateway implements AuthGateway {
   Object? signInError;
   Object? signUpError;
   Object? resendError;
+  Object? passwordResetError;
+  Object? updatePasswordError;
   Future<void> Function(String email)? resendHandler;
   String? lastResendEmail;
+  String? lastPasswordResetEmail;
+  String? lastUpdatedPassword;
   var signOutCalls = 0;
 
   @override
   Stream<AuthSession> get signedInSessions => _signedInSessions.stream;
+
+  @override
+  Stream<AuthSession> get passwordRecoverySessions =>
+      _passwordRecoverySessions.stream;
 
   void emitSignedIn(AuthSession session) {
     currentSession = session;
     _signedInSessions.add(session);
   }
 
-  Future<void> dispose() => _signedInSessions.close();
+  void emitPasswordRecovery(AuthSession session) {
+    currentSession = session;
+    _passwordRecoverySessions.add(session);
+  }
+
+  Future<void> dispose() async {
+    await _signedInSessions.close();
+    await _passwordRecoverySessions.close();
+  }
 
   @override
   Future<AuthSession?> signIn(String email, String password) async {
@@ -47,6 +66,18 @@ class FakeAuthGateway implements AuthGateway {
     lastResendEmail = email;
     if (resendError case final error?) throw error;
     await resendHandler?.call(email);
+  }
+
+  @override
+  Future<void> sendPasswordResetEmail(String email) async {
+    lastPasswordResetEmail = email;
+    if (passwordResetError case final error?) throw error;
+  }
+
+  @override
+  Future<void> updatePassword(String password) async {
+    lastUpdatedPassword = password;
+    if (updatePasswordError case final error?) throw error;
   }
 
   @override

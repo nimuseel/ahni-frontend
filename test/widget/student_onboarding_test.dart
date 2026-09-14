@@ -74,6 +74,7 @@ void main() {
       findWhitespaceWrappedText('학교 이메일로 로그인하면 내 학사 정보를 편하게 확인할 수 있어요.'),
       findsOneWidget,
     );
+    expect(find.byKey(const Key('password-reset')), findsOneWidget);
     await tester.enterText(
       find.byKey(const Key('auth-email')),
       'student@gmail.com',
@@ -88,6 +89,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('auth-sign-up-segment')));
     await tester.pump();
+    expect(find.byKey(const Key('password-reset')), findsNothing);
     expect(
       findWhitespaceWrappedText('학교 이메일로 가입한 뒤 학생 정보를 등록할 수 있어요.'),
       findsOneWidget,
@@ -120,6 +122,14 @@ void main() {
       findWhitespaceWrappedText('메일의 링크를 확인한 뒤 로그인해 주세요.'),
       findsOneWidget,
     );
+    expect(
+      findWhitespaceWrappedText(
+        '인증 메일이 오지 않으면 입력한 주소와 스팸함을 확인해 주세요. '
+        '이미 가입한 계정이 있다면 로그인해 주세요.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('password-reset')), findsNothing);
     expect(find.byKey(const Key('auth-password')), findsNothing);
 
     final resendButton = find.byKey(const Key('resend-confirmation'));
@@ -189,6 +199,52 @@ void main() {
     expect(
       fieldsAfterSignIn.every((field) => field.controller.text.isEmpty),
       isTrue,
+    );
+  });
+
+  testWidgets('password reset starts from login and returns after update', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway();
+    final controller = OnboardingController(auth: auth, api: FakeStudentApi());
+    addTearDown(controller.dispose);
+    addTearDown(auth.dispose);
+
+    await tester.pumpWidget(
+      AhniApp(environment: AppEnvironment.development, controller: controller),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('auth-email')),
+      'student@inha.edu',
+    );
+    await tester.tap(find.byKey(const Key('password-reset')));
+    await tester.pumpAndSettle();
+
+    expect(auth.lastPasswordResetEmail, 'student@inha.edu');
+    expect(
+      findWhitespaceWrappedText('비밀번호 재설정 메일을 보냈어요. 메일함을 확인해 주세요.'),
+      findsOneWidget,
+    );
+
+    auth.emitPasswordRecovery(testSession);
+    await tester.pumpAndSettle();
+    expect(findWhitespaceWrappedText('새 비밀번호를 설정해 주세요'), findsOneWidget);
+    expect(find.byKey(const Key('password-reset')), findsNothing);
+
+    await tester.enterText(
+      find.byKey(const Key('new-password')),
+      'new-password',
+    );
+    await tester.tap(find.byKey(const Key('update-password')));
+    await tester.pumpAndSettle();
+
+    expect(auth.lastUpdatedPassword, 'new-password');
+    expect(find.byKey(const Key('auth-email')), findsOneWidget);
+    expect(
+      findWhitespaceWrappedText('비밀번호를 변경했어요. 새 비밀번호로 로그인해 주세요.'),
+      findsOneWidget,
     );
   });
 

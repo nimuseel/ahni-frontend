@@ -19,11 +19,17 @@ abstract interface class AuthGateway {
 
   Stream<AuthSession> get signedInSessions;
 
+  Stream<AuthSession> get passwordRecoverySessions;
+
   Future<AuthSession?> signIn(String email, String password);
 
   Future<AuthSession?> signUp(String email, String password);
 
   Future<void> resendSignUpConfirmation(String email);
+
+  Future<void> sendPasswordResetEmail(String email);
+
+  Future<void> updatePassword(String password);
 
   Future<void> signOut();
 }
@@ -41,6 +47,17 @@ class SupabaseAuthGateway implements AuthGateway {
       .where(
         (state) =>
             state.event == AuthChangeEvent.signedIn && state.session != null,
+      )
+      .map((state) => _mapSession(state.session)!);
+
+  @override
+  Stream<AuthSession> get passwordRecoverySessions => _client
+      .auth
+      .onAuthStateChange
+      .where(
+        (state) =>
+            state.event == AuthChangeEvent.passwordRecovery &&
+            state.session != null,
       )
       .map((state) => _mapSession(state.session)!);
 
@@ -75,6 +92,27 @@ class SupabaseAuthGateway implements AuthGateway {
   Future<void> resendSignUpConfirmation(String email) async {
     try {
       await _client.auth.resend(type: OtpType.signup, email: email);
+    } on AuthException catch (error) {
+      throw AuthFailure(_safeAuthMessage(error.code));
+    }
+  }
+
+  @override
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _client.auth.resetPasswordForEmail(
+        email,
+        redirectTo: 'com.ahni.mobile://login-callback/',
+      );
+    } on AuthException catch (error) {
+      throw AuthFailure(_safeAuthMessage(error.code));
+    }
+  }
+
+  @override
+  Future<void> updatePassword(String password) async {
+    try {
+      await _client.auth.updateUser(UserAttributes(password: password));
     } on AuthException catch (error) {
       throw AuthFailure(_safeAuthMessage(error.code));
     }
