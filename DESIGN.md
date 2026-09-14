@@ -85,6 +85,12 @@ Only status semantics may add colors beyond this set in future feature branches.
 - Neutral filled resting state with no decorative border.
 - Focus state uses the accent outline. Error text remains inline and is never communicated by color alone.
 
+### Department selector
+
+- Use one labeled dropdown for each major type instead of combining multiple meanings in one control.
+- The primary department is required. Double-major and minor selectors are explicitly marked as optional and include `선택 안 함`.
+- Prevent the same department from being assigned to more than one major type, and preserve all selections when a server request fails.
+
 ### Profile summary
 
 - Accent-soft surface containing the student's display identity, primary department, and account or enrollment status.

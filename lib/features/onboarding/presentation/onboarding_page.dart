@@ -483,6 +483,8 @@ class _RegistrationViewState extends State<_RegistrationView> {
   final _admissionYearController = TextEditingController();
   final _nicknameController = TextEditingController();
   String? _departmentId;
+  String? _doubleMajorDepartmentId;
+  String? _minorDepartmentId;
   String _enrollmentStatus = 'ENROLLED';
 
   @override
@@ -500,11 +502,29 @@ class _RegistrationViewState extends State<_RegistrationView> {
     return null;
   }
 
+  String? _validateDepartment(String? value, {required bool isRequired}) {
+    if (isRequired && (value == null || value.isEmpty)) {
+      return '주전공 학과를 선택해 주세요.';
+    }
+    if (value == null || value.isEmpty) return null;
+    final selected = [
+      _departmentId,
+      _doubleMajorDepartmentId,
+      _minorDepartmentId,
+    ];
+    if (selected.where((departmentId) => departmentId == value).length > 1) {
+      return '같은 학과를 여러 전공으로 선택할 수 없어요.';
+    }
+    return null;
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     await widget.controller.registerProfile(
       StudentRegistration(
         primaryDepartmentEntityId: _departmentId!,
+        doubleMajorDepartmentEntityId: _doubleMajorDepartmentId,
+        minorDepartmentEntityId: _minorDepartmentId,
         admissionYear: int.parse(_admissionYearController.text),
         enrollmentStatus: _enrollmentStatus,
         nickname: _nicknameController.text,
@@ -533,7 +553,7 @@ class _RegistrationViewState extends State<_RegistrationView> {
             ),
             const SizedBox(height: 12),
             WhitespaceWrappedText(
-              '학과, 입학연도와 학적 상태는 맞춤 학사 안내에 사용해요.',
+              '전공, 입학연도와 학적 상태는 맞춤 학사 안내에 사용해요.',
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 24),
@@ -548,26 +568,40 @@ class _RegistrationViewState extends State<_RegistrationView> {
                   ],
                   Text('기본 정보', style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    key: const Key('department-field'),
-                    initialValue: _departmentId,
-                    isExpanded: true,
-                    decoration: const InputDecoration(labelText: '주전공 학과'),
-                    items: [
-                      for (final department in widget.state.departments)
-                        DropdownMenuItem(
-                          value: department.entityId,
-                          child: Text(
-                            department.name,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                    ],
-                    onChanged: isSubmitting
-                        ? null
-                        : (value) => setState(() => _departmentId = value),
+                  _DepartmentField(
+                    fieldKey: const Key('department-field'),
+                    label: '주전공 학과',
+                    departments: widget.state.departments,
+                    value: _departmentId,
+                    isEnabled: !isSubmitting,
+                    isRequired: true,
+                    onChanged: (value) => setState(() => _departmentId = value),
                     validator: (value) =>
-                        value == null ? '주전공 학과를 선택해 주세요.' : null,
+                        _validateDepartment(value, isRequired: true),
+                  ),
+                  const SizedBox(height: 16),
+                  _DepartmentField(
+                    fieldKey: const Key('double-major-department-field'),
+                    label: '복수전공 학과 (선택)',
+                    departments: widget.state.departments,
+                    value: _doubleMajorDepartmentId,
+                    isEnabled: !isSubmitting,
+                    onChanged: (value) =>
+                        setState(() => _doubleMajorDepartmentId = value),
+                    validator: (value) =>
+                        _validateDepartment(value, isRequired: false),
+                  ),
+                  const SizedBox(height: 16),
+                  _DepartmentField(
+                    fieldKey: const Key('minor-department-field'),
+                    label: '부전공 학과 (선택)',
+                    departments: widget.state.departments,
+                    value: _minorDepartmentId,
+                    isEnabled: !isSubmitting,
+                    onChanged: (value) =>
+                        setState(() => _minorDepartmentId = value),
+                    validator: (value) =>
+                        _validateDepartment(value, isRequired: false),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -873,6 +907,53 @@ class _SectionCard extends StatelessWidget {
         ],
       ),
       child: child,
+    );
+  }
+}
+
+class _DepartmentField extends StatelessWidget {
+  const _DepartmentField({
+    required this.fieldKey,
+    required this.label,
+    required this.departments,
+    required this.value,
+    required this.isEnabled,
+    required this.onChanged,
+    required this.validator,
+    this.isRequired = false,
+  });
+
+  static const _none = '';
+
+  final Key fieldKey;
+  final String label;
+  final List<Department> departments;
+  final String? value;
+  final bool isEnabled;
+  final bool isRequired;
+  final ValueChanged<String?> onChanged;
+  final FormFieldValidator<String> validator;
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      key: fieldKey,
+      initialValue: value ?? (isRequired ? null : _none),
+      isExpanded: true,
+      decoration: InputDecoration(labelText: label),
+      items: [
+        if (!isRequired)
+          const DropdownMenuItem(value: _none, child: Text('선택 안 함')),
+        for (final department in departments)
+          DropdownMenuItem(
+            value: department.entityId,
+            child: Text(department.name, overflow: TextOverflow.ellipsis),
+          ),
+      ],
+      onChanged: isEnabled
+          ? (selected) => onChanged(selected == _none ? null : selected)
+          : null,
+      validator: validator,
     );
   }
 }

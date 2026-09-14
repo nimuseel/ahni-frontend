@@ -153,6 +153,16 @@ const testDepartment = Department(
   name: '소프트웨어융합공학과',
 );
 
+const testDoubleMajorDepartment = Department(
+  entityId: '00000000-0000-0000-0000-000000000002',
+  name: '금융투자학과',
+);
+
+const testMinorDepartment = Department(
+  entityId: '00000000-0000-0000-0000-000000000003',
+  name: '산업경영학과',
+);
+
 const testProfile = StudentProfile(
   studentEntityId: '00000000-0000-0000-0000-000000000020',
   email: 'student@inha.edu',
