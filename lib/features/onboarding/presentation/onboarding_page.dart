@@ -56,7 +56,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
       ),
       ProfileReady state => _ProfileView(
         controller: widget.controller,
-        profile: state.profile,
+        state: state,
+      ),
+      MajorEditing state => _MajorEditingView(
+        controller: widget.controller,
+        state: state,
       ),
       RetryableFailure state => _RetryView(
         message: state.message,
@@ -663,13 +667,14 @@ class _RegistrationViewState extends State<_RegistrationView> {
 }
 
 class _ProfileView extends StatelessWidget {
-  const _ProfileView({required this.controller, required this.profile});
+  const _ProfileView({required this.controller, required this.state});
 
   final OnboardingController controller;
-  final StudentProfile profile;
+  final ProfileReady state;
 
   @override
   Widget build(BuildContext context) {
+    final profile = state.profile;
     final displayName = profile.nickname?.trim().isNotEmpty == true
         ? profile.nickname!.trim()
         : profile.email.split('@').first;
@@ -739,6 +744,53 @@ class _ProfileView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
+          if (state.message case final message?) ...[
+            _StatusMessage(message: message, isError: true),
+            const SizedBox(height: 16),
+          ],
+          _SectionCard(
+            key: const Key('major-information-card'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '전공 정보',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    OutlinedButton(
+                      onPressed: state.isLoadingMajors
+                          ? null
+                          : controller.startMajorEditing,
+                      child: _ButtonLabel(
+                        isLoading: state.isLoadingMajors,
+                        label: '전공 수정',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _ProfileField(
+                  label: '주전공',
+                  value: profile.primaryDepartment.name,
+                ),
+                const Divider(height: 32),
+                _ProfileField(
+                  label: '복수전공',
+                  value: profile.doubleMajorDepartment?.name ?? '선택 안 함',
+                ),
+                const Divider(height: 32),
+                _ProfileField(
+                  label: '부전공',
+                  value: profile.minorDepartment?.name ?? '선택 안 함',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
           _SectionCard(
             key: const Key('student-information-card'),
             child: Column(
@@ -763,6 +815,170 @@ class _ProfileView extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MajorEditingView extends StatefulWidget {
+  const _MajorEditingView({required this.controller, required this.state});
+
+  final OnboardingController controller;
+  final MajorEditing state;
+
+  @override
+  State<_MajorEditingView> createState() => _MajorEditingViewState();
+}
+
+class _MajorEditingViewState extends State<_MajorEditingView> {
+  final _formKey = GlobalKey<FormState>();
+  late String? _primaryDepartmentId;
+  late String? _doubleMajorDepartmentId;
+  late String? _minorDepartmentId;
+
+  @override
+  void initState() {
+    super.initState();
+    final profile = widget.state.profile;
+    _primaryDepartmentId = profile.primaryDepartment.entityId;
+    _doubleMajorDepartmentId = profile.doubleMajorDepartment?.entityId;
+    _minorDepartmentId = profile.minorDepartment?.entityId;
+  }
+
+  List<Department> get _departments {
+    final profile = widget.state.profile;
+    final currentDepartments = <Department>[
+      profile.primaryDepartment,
+      ?profile.doubleMajorDepartment,
+      ?profile.minorDepartment,
+    ];
+    return {
+      for (final department in [
+        ...widget.state.departments,
+        ...currentDepartments,
+      ])
+        department.entityId: department,
+    }.values.toList(growable: false);
+  }
+
+  String? _validateDepartment(String? value, {required bool isRequired}) {
+    if (isRequired && (value == null || value.isEmpty)) {
+      return '주전공 학과를 선택해 주세요.';
+    }
+    if (value == null || value.isEmpty) return null;
+    final selected = [
+      _primaryDepartmentId,
+      _doubleMajorDepartmentId,
+      _minorDepartmentId,
+    ];
+    if (selected.where((departmentId) => departmentId == value).length > 1) {
+      return '같은 학과를 여러 전공으로 선택할 수 없어요.';
+    }
+    return null;
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    await widget.controller.updateMajors(
+      StudentMajorUpdate(
+        primaryDepartmentEntityId: _primaryDepartmentId!,
+        doubleMajorDepartmentEntityId: _doubleMajorDepartmentId,
+        minorDepartmentEntityId: _minorDepartmentId,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isSubmitting = widget.state.isSubmitting;
+    return _PageScaffold(
+      title: '전공 정보',
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            WhitespaceWrappedText(
+              '전공 정보를 수정해 주세요',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 12),
+            WhitespaceWrappedText(
+              '현재 이수 중인 전공을 기준으로 학사 안내를 제공해요.',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 24),
+            _SectionCard(
+              key: const Key('major-editing-card'),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (widget.state.message case final message?) ...[
+                    _StatusMessage(message: message, isError: true),
+                    const SizedBox(height: 16),
+                  ],
+                  _DepartmentField(
+                    fieldKey: const Key('department-field'),
+                    label: '주전공 학과',
+                    departments: _departments,
+                    value: _primaryDepartmentId,
+                    isEnabled: !isSubmitting,
+                    isRequired: true,
+                    onChanged: (value) =>
+                        setState(() => _primaryDepartmentId = value),
+                    validator: (value) =>
+                        _validateDepartment(value, isRequired: true),
+                  ),
+                  const SizedBox(height: 16),
+                  _DepartmentField(
+                    fieldKey: const Key('double-major-department-field'),
+                    label: '복수전공 학과 (선택)',
+                    departments: _departments,
+                    value: _doubleMajorDepartmentId,
+                    isEnabled: !isSubmitting,
+                    onChanged: (value) =>
+                        setState(() => _doubleMajorDepartmentId = value),
+                    validator: (value) =>
+                        _validateDepartment(value, isRequired: false),
+                  ),
+                  const SizedBox(height: 16),
+                  _DepartmentField(
+                    fieldKey: const Key('minor-department-field'),
+                    label: '부전공 학과 (선택)',
+                    departments: _departments,
+                    value: _minorDepartmentId,
+                    isEnabled: !isSubmitting,
+                    onChanged: (value) =>
+                        setState(() => _minorDepartmentId = value),
+                    validator: (value) =>
+                        _validateDepartment(value, isRequired: false),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: isSubmitting ? null : _submit,
+                      child: _ButtonLabel(
+                        isLoading: isSubmitting,
+                        label: '전공 저장',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: isSubmitting
+                          ? null
+                          : widget.controller.cancelMajorEditing,
+                      child: const Text('취소'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

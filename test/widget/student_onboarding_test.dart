@@ -51,7 +51,109 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('학사 준비를 이어가세요'), findsNothing);
     expect(find.byKey(const Key('profile-summary')), findsOneWidget);
-    expect(find.text('소프트웨어융합공학과'), findsOneWidget);
+    expect(find.text('소프트웨어융합공학과'), findsWidgets);
+  });
+
+  testWidgets('shows and updates the student major information', (
+    tester,
+  ) async {
+    final api = FakeStudentApi();
+    api.getProfileHandler = (_) async => testProfileWithMajors;
+    api.getDepartmentsHandler = () async => const [
+      testDepartment,
+      testDoubleMajorDepartment,
+      testMinorDepartment,
+    ];
+    api.replaceMajorsHandler = (_, update) async => testProfile;
+    final controller = OnboardingController(
+      auth: FakeAuthGateway(currentSession: testSession),
+      api: api,
+    );
+
+    await tester.pumpWidget(
+      AhniApp(environment: AppEnvironment.development, controller: controller),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('major-information-card')), findsOneWidget);
+    expect(find.text('금융투자학과'), findsOneWidget);
+    expect(find.text('산업경영학과'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(OutlinedButton, '전공 수정'));
+    await tester.pumpAndSettle();
+    expect(findWhitespaceWrappedText('전공 정보를 수정해 주세요'), findsOneWidget);
+
+    final minorField = find.byKey(const Key('minor-department-field'));
+    await tester.ensureVisible(minorField);
+    await tester.pumpAndSettle();
+    await tester.tap(minorField);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('선택 안 함').last);
+
+    final saveButton = find.widgetWithText(FilledButton, '전공 저장');
+    await tester.ensureVisible(saveButton);
+    await tester.pumpAndSettle();
+    await tester.tap(saveButton);
+    await tester.pumpAndSettle();
+
+    expect(
+      api.lastMajorUpdate?.primaryDepartmentEntityId,
+      testDepartment.entityId,
+    );
+    expect(
+      api.lastMajorUpdate?.doubleMajorDepartmentEntityId,
+      testDoubleMajorDepartment.entityId,
+    );
+    expect(api.lastMajorUpdate?.minorDepartmentEntityId, isNull);
+    expect(find.byKey(const Key('major-information-card')), findsOneWidget);
+  });
+
+  testWidgets('keeps selected majors when updating fails', (tester) async {
+    final api = FakeStudentApi();
+    api.getProfileHandler = (_) async => testProfile;
+    api.getDepartmentsHandler = () async => const [
+      testDepartment,
+      testDoubleMajorDepartment,
+    ];
+    api.replaceMajorsHandler = (_, _) => Future.error(
+      const StudentApiFailure(
+        StudentApiFailureKind.recoverable,
+        '전공 정보를 저장하지 못했습니다. 다시 시도해 주세요.',
+      ),
+    );
+    final controller = OnboardingController(
+      auth: FakeAuthGateway(currentSession: testSession),
+      api: api,
+    );
+
+    await tester.pumpWidget(
+      AhniApp(environment: AppEnvironment.development, controller: controller),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(OutlinedButton, '전공 수정'));
+    await tester.pumpAndSettle();
+
+    final doubleMajorField = find.byKey(
+      const Key('double-major-department-field'),
+    );
+    await tester.ensureVisible(doubleMajorField);
+    await tester.pumpAndSettle();
+    await tester.tap(doubleMajorField);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('금융투자학과').last);
+
+    final saveButton = find.widgetWithText(FilledButton, '전공 저장');
+    await tester.ensureVisible(saveButton);
+    await tester.pumpAndSettle();
+    await tester.tap(saveButton);
+    await tester.pumpAndSettle();
+
+    expect(
+      findWhitespaceWrappedText('전공 정보를 저장하지 못했습니다. 다시 시도해 주세요.'),
+      findsOneWidget,
+    );
+    expect(find.text('금융투자학과'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, '전공 저장'), findsOneWidget);
   });
 
   testWidgets('validates school email and shows email confirmation pending', (
@@ -414,6 +516,45 @@ void main() {
 
     expect(find.text('같은 학과를 여러 전공으로 선택할 수 없어요.'), findsWidgets);
     expect(api.lastRegistration, isNull);
+  });
+
+  testWidgets('major profile and editing remain usable with large text', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(320, 568));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final api = FakeStudentApi();
+    api.getProfileHandler = (_) async => testProfileWithMajors;
+    api.getDepartmentsHandler = () async => const [
+      testDepartment,
+      testDoubleMajorDepartment,
+      testMinorDepartment,
+    ];
+    final controller = OnboardingController(
+      auth: FakeAuthGateway(currentSession: testSession),
+      api: api,
+    );
+
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+        child: AhniApp(
+          environment: AppEnvironment.development,
+          controller: controller,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final editButton = find.widgetWithText(OutlinedButton, '전공 수정');
+    await tester.ensureVisible(editButton);
+    await tester.pumpAndSettle();
+    await tester.tap(editButton);
+    await tester.pumpAndSettle();
+
+    expect(findWhitespaceWrappedText('전공 정보를 수정해 주세요'), findsOneWidget);
+    expect(find.byType(Scrollable), findsWidgets);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('auth form remains usable with large text', (tester) async {

@@ -85,10 +85,8 @@ class StudentRegistration {
   Map<String, Object> toJson() {
     return {
       'primaryDepartmentEntityId': primaryDepartmentEntityId,
-      if (doubleMajorDepartmentEntityId case final value?)
-        'doubleMajorDepartmentEntityId': value,
-      if (minorDepartmentEntityId case final value?)
-        'minorDepartmentEntityId': value,
+      'doubleMajorDepartmentEntityId': ?doubleMajorDepartmentEntityId,
+      'minorDepartmentEntityId': ?minorDepartmentEntityId,
       'admissionYear': admissionYear,
       'enrollmentStatus': enrollmentStatus,
       if (nickname case final value? when value.trim().isNotEmpty)
@@ -111,10 +109,8 @@ class StudentMajorUpdate {
   Map<String, Object> toJson() {
     return {
       'primaryDepartmentEntityId': primaryDepartmentEntityId,
-      if (doubleMajorDepartmentEntityId case final value?)
-        'doubleMajorDepartmentEntityId': value,
-      if (minorDepartmentEntityId case final value?)
-        'minorDepartmentEntityId': value,
+      'doubleMajorDepartmentEntityId': ?doubleMajorDepartmentEntityId,
+      'minorDepartmentEntityId': ?minorDepartmentEntityId,
     };
   }
 }

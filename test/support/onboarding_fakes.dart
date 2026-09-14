@@ -172,3 +172,15 @@ const testProfile = StudentProfile(
   enrollmentStatus: 'ENROLLED',
   accountStatus: 'ACTIVE',
 );
+
+const testProfileWithMajors = StudentProfile(
+  studentEntityId: '00000000-0000-0000-0000-000000000020',
+  email: 'student@inha.edu',
+  nickname: '인하',
+  primaryDepartment: testDepartment,
+  doubleMajorDepartment: testDoubleMajorDepartment,
+  minorDepartment: testMinorDepartment,
+  admissionYear: 2024,
+  enrollmentStatus: 'ENROLLED',
+  accountStatus: 'ACTIVE',
+);
