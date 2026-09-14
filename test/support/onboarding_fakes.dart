@@ -95,8 +95,14 @@ class FakeStudentApi implements StudentApi {
     StudentRegistration registration,
   )?
   registerProfileHandler;
+  Future<StudentProfile> Function(
+    String accessToken,
+    StudentMajorUpdate update,
+  )?
+  replaceMajorsHandler;
 
   StudentRegistration? lastRegistration;
+  StudentMajorUpdate? lastMajorUpdate;
 
   @override
   Future<List<Department>> getDepartments() {
@@ -123,6 +129,17 @@ class FakeStudentApi implements StudentApi {
     final handler = registerProfileHandler;
     if (handler == null) throw StateError('registerProfileHandler is required');
     return handler(accessToken, registration);
+  }
+
+  @override
+  Future<StudentProfile> replaceMajors(
+    String accessToken,
+    StudentMajorUpdate update,
+  ) {
+    lastMajorUpdate = update;
+    final handler = replaceMajorsHandler;
+    if (handler == null) throw StateError('replaceMajorsHandler is required');
+    return handler(accessToken, update);
   }
 }
 

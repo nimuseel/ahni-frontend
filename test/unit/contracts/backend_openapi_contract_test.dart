@@ -17,6 +17,21 @@ void main() {
 
     final paths = contract['paths']! as Map<String, Object?>;
     expect(paths, contains('/api/v1/students/me'));
+    expect(paths, contains('/api/v1/students/me/majors'));
     expect(paths, contains('/api/v1/departments'));
+
+    final components = contract['components']! as Map<String, Object?>;
+    final schemas = components['schemas']! as Map<String, Object?>;
+    final registration =
+        schemas['StudentProfileRegistrationRequest']! as Map<String, Object?>;
+    final registrationProperties =
+        registration['properties']! as Map<String, Object?>;
+    expect(registrationProperties, contains('doubleMajorDepartmentEntityId'));
+    expect(registrationProperties, contains('minorDepartmentEntityId'));
+
+    final profile = schemas['StudentProfileResponse']! as Map<String, Object?>;
+    final profileProperties = profile['properties']! as Map<String, Object?>;
+    expect(profileProperties, contains('doubleMajorDepartment'));
+    expect(profileProperties, contains('minorDepartment'));
   });
 }

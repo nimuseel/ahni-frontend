@@ -11,6 +11,8 @@ void main() {
     'email': 'student@inha.edu',
     'nickname': '인하',
     'primaryDepartment': {'entityId': 'department-id', 'name': '소프트웨어융합공학과'},
+    'doubleMajorDepartment': {'entityId': 'double-major-id', 'name': '금융투자학과'},
+    'minorDepartment': {'entityId': 'minor-id', 'name': '산업경영학과'},
     'admissionYear': 2024,
     'enrollmentStatus': 'ENROLLED',
     'accountStatus': 'ACTIVE',
@@ -37,6 +39,8 @@ void main() {
 
       expect(profile.email, 'student@inha.edu');
       expect(profile.primaryDepartment.name, '소프트웨어융합공학과');
+      expect(profile.doubleMajorDepartment?.name, '금융투자학과');
+      expect(profile.minorDepartment?.name, '산업경영학과');
     },
   );
 
@@ -88,6 +92,8 @@ void main() {
       'jwt',
       const StudentRegistration(
         primaryDepartmentEntityId: 'department-id',
+        doubleMajorDepartmentEntityId: 'double-major-id',
+        minorDepartmentEntityId: 'minor-id',
         admissionYear: 2024,
         enrollmentStatus: 'ENROLLED',
         nickname: '인하',
@@ -96,11 +102,91 @@ void main() {
 
     expect(requestBody, {
       'primaryDepartmentEntityId': 'department-id',
+      'doubleMajorDepartmentEntityId': 'double-major-id',
+      'minorDepartmentEntityId': 'minor-id',
       'admissionYear': 2024,
       'enrollmentStatus': 'ENROLLED',
       'nickname': '인하',
     });
     expect(profile.studentEntityId, 'student-id');
+  });
+
+  test('registration omits unselected optional majors', () {
+    const registration = StudentRegistration(
+      primaryDepartmentEntityId: 'department-id',
+      admissionYear: 2024,
+      enrollmentStatus: 'ENROLLED',
+    );
+
+    expect(registration.toJson(), {
+      'primaryDepartmentEntityId': 'department-id',
+      'admissionYear': 2024,
+      'enrollmentStatus': 'ENROLLED',
+    });
+  });
+
+  test('PUT /students/me/majors sends the complete major selection', () async {
+    late Map<String, Object?> requestBody;
+    final api = HttpStudentApi(
+      baseUri: Uri.parse('https://api.ahni.test'),
+      client: MockClient((request) async {
+        requestBody = jsonDecode(request.body) as Map<String, Object?>;
+        expect(request.method, 'PUT');
+        expect(request.url.path, '/api/v1/students/me/majors');
+        expect(request.headers['authorization'], 'Bearer jwt');
+        return http.Response.bytes(
+          utf8.encode(jsonEncode(profileJson)),
+          200,
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        );
+      }),
+    );
+
+    final profile = await api.replaceMajors(
+      'jwt',
+      const StudentMajorUpdate(
+        primaryDepartmentEntityId: 'department-id',
+        minorDepartmentEntityId: 'minor-id',
+      ),
+    );
+
+    expect(requestBody, {
+      'primaryDepartmentEntityId': 'department-id',
+      'minorDepartmentEntityId': 'minor-id',
+    });
+    expect(profile.minorDepartment?.entityId, 'minor-id');
+  });
+
+  test('duplicate major departments use safe Korean copy', () async {
+    final api = HttpStudentApi(
+      baseUri: Uri.parse('https://api.ahni.test'),
+      client: MockClient(
+        (_) async => http.Response(
+          jsonEncode({
+            'code': 'DUPLICATE_MAJOR_DEPARTMENT',
+            'message': 'internal detail',
+          }),
+          400,
+        ),
+      ),
+    );
+
+    expect(
+      () => api.replaceMajors(
+        'jwt',
+        const StudentMajorUpdate(
+          primaryDepartmentEntityId: 'same-id',
+          minorDepartmentEntityId: 'same-id',
+        ),
+      ),
+      throwsA(
+        isA<StudentApiFailure>().having(
+          (failure) => failure.userMessage,
+          'userMessage',
+          '같은 학과를 여러 전공으로 선택할 수 없어요.',
+        ),
+      ),
+    );
   });
 
   test('stable registration errors use safe Korean copy', () async {
