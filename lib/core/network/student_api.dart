@@ -25,6 +25,8 @@ class StudentProfile {
     required this.email,
     required this.nickname,
     required this.primaryDepartment,
+    this.doubleMajorDepartment,
+    this.minorDepartment,
     required this.admissionYear,
     required this.enrollmentStatus,
     required this.accountStatus,
@@ -38,6 +40,8 @@ class StudentProfile {
       primaryDepartment: Department.fromJson(
         json['primaryDepartment']! as Map<String, Object?>,
       ),
+      doubleMajorDepartment: _optionalDepartment(json['doubleMajorDepartment']),
+      minorDepartment: _optionalDepartment(json['minorDepartment']),
       admissionYear: json['admissionYear']! as int,
       enrollmentStatus: json['enrollmentStatus']! as String,
       accountStatus: json['accountStatus']! as String,
@@ -48,20 +52,32 @@ class StudentProfile {
   final String email;
   final String? nickname;
   final Department primaryDepartment;
+  final Department? doubleMajorDepartment;
+  final Department? minorDepartment;
   final int admissionYear;
   final String enrollmentStatus;
   final String accountStatus;
+
+  static Department? _optionalDepartment(Object? value) {
+    return value == null
+        ? null
+        : Department.fromJson(value as Map<String, Object?>);
+  }
 }
 
 class StudentRegistration {
   const StudentRegistration({
     required this.primaryDepartmentEntityId,
+    this.doubleMajorDepartmentEntityId,
+    this.minorDepartmentEntityId,
     required this.admissionYear,
     required this.enrollmentStatus,
     this.nickname,
   });
 
   final String primaryDepartmentEntityId;
+  final String? doubleMajorDepartmentEntityId;
+  final String? minorDepartmentEntityId;
   final int admissionYear;
   final String enrollmentStatus;
   final String? nickname;
@@ -69,10 +85,32 @@ class StudentRegistration {
   Map<String, Object> toJson() {
     return {
       'primaryDepartmentEntityId': primaryDepartmentEntityId,
+      'doubleMajorDepartmentEntityId': ?doubleMajorDepartmentEntityId,
+      'minorDepartmentEntityId': ?minorDepartmentEntityId,
       'admissionYear': admissionYear,
       'enrollmentStatus': enrollmentStatus,
       if (nickname case final value? when value.trim().isNotEmpty)
         'nickname': value.trim(),
+    };
+  }
+}
+
+class StudentMajorUpdate {
+  const StudentMajorUpdate({
+    required this.primaryDepartmentEntityId,
+    this.doubleMajorDepartmentEntityId,
+    this.minorDepartmentEntityId,
+  });
+
+  final String primaryDepartmentEntityId;
+  final String? doubleMajorDepartmentEntityId;
+  final String? minorDepartmentEntityId;
+
+  Map<String, Object> toJson() {
+    return {
+      'primaryDepartmentEntityId': primaryDepartmentEntityId,
+      'doubleMajorDepartmentEntityId': ?doubleMajorDepartmentEntityId,
+      'minorDepartmentEntityId': ?minorDepartmentEntityId,
     };
   }
 }
@@ -99,6 +137,11 @@ abstract interface class StudentApi {
   Future<StudentProfile> registerProfile(
     String accessToken,
     StudentRegistration registration,
+  );
+
+  Future<StudentProfile> replaceMajors(
+    String accessToken,
+    StudentMajorUpdate update,
   );
 }
 
@@ -158,6 +201,25 @@ class HttpStudentApi implements StudentApi {
     return _decodeProfile(response);
   }
 
+  @override
+  Future<StudentProfile> replaceMajors(
+    String accessToken,
+    StudentMajorUpdate update,
+  ) async {
+    final response = await _request(
+      () => _client.put(
+        baseUri.resolve('/api/v1/students/me/majors'),
+        headers: {
+          'authorization': 'Bearer $accessToken',
+          'content-type': 'application/json',
+        },
+        body: jsonEncode(update.toJson()),
+      ),
+    );
+    if (response.statusCode != 200) throw _failure(response);
+    return _decodeProfile(response);
+  }
+
   Future<http.Response> _request(
     Future<http.Response> Function() request,
   ) async {
@@ -208,6 +270,7 @@ class HttpStudentApi implements StudentApi {
         '이 이메일로 등록된 학생 정보가 이미 있어요.\n'
             '로그아웃 후 다시 로그인해 주세요. 계속되면 관리자에게 문의해 주세요.',
       'INVALID_ENROLLMENT_STATUS' => '재학 또는 휴학 상태를 선택해 주세요.',
+      'DUPLICATE_MAJOR_DEPARTMENT' => '같은 학과를 여러 전공으로 선택할 수 없어요.',
       _ => '입력한 정보를 확인해 주세요.',
     });
   }

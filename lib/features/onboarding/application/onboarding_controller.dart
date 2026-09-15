@@ -65,9 +65,29 @@ class RegistrationRequired extends OnboardingState {
 }
 
 class ProfileReady extends OnboardingState {
-  const ProfileReady(this.profile);
+  const ProfileReady(
+    this.profile, {
+    this.message,
+    this.isLoadingMajors = false,
+  });
 
   final StudentProfile profile;
+  final String? message;
+  final bool isLoadingMajors;
+}
+
+class MajorEditing extends OnboardingState {
+  const MajorEditing({
+    required this.profile,
+    required this.departments,
+    this.message,
+    this.isSubmitting = false,
+  });
+
+  final StudentProfile profile;
+  final List<Department> departments;
+  final String? message;
+  final bool isSubmitting;
 }
 
 class RetryableFailure extends OnboardingState {
@@ -285,6 +305,84 @@ class OnboardingController extends ChangeNotifier {
           message: '학생 정보를 등록하지 못했습니다. 다시 시도해 주세요.',
         ),
       );
+    }
+  }
+
+  Future<void> startMajorEditing() async {
+    final previous = _state;
+    if (previous is! ProfileReady || previous.isLoadingMajors) return;
+    _setState(ProfileReady(previous.profile, isLoadingMajors: true));
+    try {
+      final departments = await _api.getDepartments();
+      if (departments.isEmpty) {
+        _setState(
+          ProfileReady(
+            previous.profile,
+            message: '학과 목록을 불러오지 못했습니다. 다시 시도해 주세요.',
+          ),
+        );
+        return;
+      }
+      _setState(
+        MajorEditing(profile: previous.profile, departments: departments),
+      );
+    } on StudentApiFailure catch (failure) {
+      _setState(ProfileReady(previous.profile, message: failure.userMessage));
+    } on Object catch (_) {
+      _setState(
+        ProfileReady(
+          previous.profile,
+          message: '학과 목록을 불러오지 못했습니다. 다시 시도해 주세요.',
+        ),
+      );
+    }
+  }
+
+  Future<void> updateMajors(StudentMajorUpdate update) async {
+    final previous = _state;
+    if (previous is! MajorEditing || previous.isSubmitting) return;
+    final session = _auth.currentSession;
+    if (session == null) {
+      _setState(const AuthenticationRequired());
+      return;
+    }
+    _setState(
+      MajorEditing(
+        profile: previous.profile,
+        departments: previous.departments,
+        isSubmitting: true,
+      ),
+    );
+    try {
+      final profile = await _api.replaceMajors(session.accessToken, update);
+      _setState(ProfileReady(profile));
+    } on StudentApiFailure catch (failure) {
+      if (failure.kind == StudentApiFailureKind.unauthorized) {
+        await _returnToAuthentication();
+        return;
+      }
+      _setState(
+        MajorEditing(
+          profile: previous.profile,
+          departments: previous.departments,
+          message: failure.userMessage,
+        ),
+      );
+    } on Object catch (_) {
+      _setState(
+        MajorEditing(
+          profile: previous.profile,
+          departments: previous.departments,
+          message: '전공 정보를 저장하지 못했습니다. 다시 시도해 주세요.',
+        ),
+      );
+    }
+  }
+
+  void cancelMajorEditing() {
+    final current = _state;
+    if (current is MajorEditing && !current.isSubmitting) {
+      _setState(ProfileReady(current.profile));
     }
   }
 

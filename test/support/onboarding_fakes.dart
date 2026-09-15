@@ -95,8 +95,14 @@ class FakeStudentApi implements StudentApi {
     StudentRegistration registration,
   )?
   registerProfileHandler;
+  Future<StudentProfile> Function(
+    String accessToken,
+    StudentMajorUpdate update,
+  )?
+  replaceMajorsHandler;
 
   StudentRegistration? lastRegistration;
+  StudentMajorUpdate? lastMajorUpdate;
 
   @override
   Future<List<Department>> getDepartments() {
@@ -124,6 +130,17 @@ class FakeStudentApi implements StudentApi {
     if (handler == null) throw StateError('registerProfileHandler is required');
     return handler(accessToken, registration);
   }
+
+  @override
+  Future<StudentProfile> replaceMajors(
+    String accessToken,
+    StudentMajorUpdate update,
+  ) {
+    lastMajorUpdate = update;
+    final handler = replaceMajorsHandler;
+    if (handler == null) throw StateError('replaceMajorsHandler is required');
+    return handler(accessToken, update);
+  }
 }
 
 const testSession = AuthSession(
@@ -136,11 +153,33 @@ const testDepartment = Department(
   name: '소프트웨어융합공학과',
 );
 
+const testDoubleMajorDepartment = Department(
+  entityId: '00000000-0000-0000-0000-000000000002',
+  name: '금융투자학과',
+);
+
+const testMinorDepartment = Department(
+  entityId: '00000000-0000-0000-0000-000000000003',
+  name: '산업경영학과',
+);
+
 const testProfile = StudentProfile(
   studentEntityId: '00000000-0000-0000-0000-000000000020',
   email: 'student@inha.edu',
   nickname: '인하',
   primaryDepartment: testDepartment,
+  admissionYear: 2024,
+  enrollmentStatus: 'ENROLLED',
+  accountStatus: 'ACTIVE',
+);
+
+const testProfileWithMajors = StudentProfile(
+  studentEntityId: '00000000-0000-0000-0000-000000000020',
+  email: 'student@inha.edu',
+  nickname: '인하',
+  primaryDepartment: testDepartment,
+  doubleMajorDepartment: testDoubleMajorDepartment,
+  minorDepartment: testMinorDepartment,
   admissionYear: 2024,
   enrollmentStatus: 'ENROLLED',
   accountStatus: 'ACTIVE',

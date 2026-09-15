@@ -302,4 +302,119 @@ void main() {
     result.complete(testProfile);
     await initialization;
   });
+
+  test('major editing loads departments for the current profile', () async {
+    final api = FakeStudentApi();
+    api.getProfileHandler = (_) async => testProfile;
+    api.getDepartmentsHandler = () async => const [
+      testDepartment,
+      testDoubleMajorDepartment,
+      testMinorDepartment,
+    ];
+    final controller = OnboardingController(
+      auth: FakeAuthGateway(currentSession: testSession),
+      api: api,
+    );
+    await controller.initialize();
+
+    await controller.startMajorEditing();
+
+    final state = controller.state as MajorEditing;
+    expect(state.profile, testProfile);
+    expect(state.departments, const [
+      testDepartment,
+      testDoubleMajorDepartment,
+      testMinorDepartment,
+    ]);
+  });
+
+  test(
+    'major update sends the session token and enters the updated profile',
+    () async {
+      final api = FakeStudentApi();
+      api.getProfileHandler = (_) async => testProfile;
+      api.getDepartmentsHandler = () async => const [testDepartment];
+      api.replaceMajorsHandler = (token, update) async {
+        expect(token, testSession.accessToken);
+        return testProfileWithMajors;
+      };
+      final controller = OnboardingController(
+        auth: FakeAuthGateway(currentSession: testSession),
+        api: api,
+      );
+      await controller.initialize();
+      await controller.startMajorEditing();
+
+      await controller.updateMajors(
+        StudentMajorUpdate(
+          primaryDepartmentEntityId: testDepartment.entityId,
+          doubleMajorDepartmentEntityId: testDoubleMajorDepartment.entityId,
+          minorDepartmentEntityId: testMinorDepartment.entityId,
+        ),
+      );
+
+      expect(
+        api.lastMajorUpdate?.minorDepartmentEntityId,
+        testMinorDepartment.entityId,
+      );
+      expect((controller.state as ProfileReady).profile, testProfileWithMajors);
+    },
+  );
+
+  test(
+    'major update failure keeps editing available with safe feedback',
+    () async {
+      final api = FakeStudentApi();
+      api.getProfileHandler = (_) async => testProfile;
+      api.getDepartmentsHandler = () async => const [testDepartment];
+      api.replaceMajorsHandler = (_, _) => Future.error(
+        const StudentApiFailure(
+          StudentApiFailureKind.validation,
+          '같은 학과를 여러 전공으로 선택할 수 없어요.',
+        ),
+      );
+      final controller = OnboardingController(
+        auth: FakeAuthGateway(currentSession: testSession),
+        api: api,
+      );
+      await controller.initialize();
+      await controller.startMajorEditing();
+
+      await controller.updateMajors(
+        StudentMajorUpdate(primaryDepartmentEntityId: testDepartment.entityId),
+      );
+
+      final state = controller.state as MajorEditing;
+      expect(state.profile, testProfile);
+      expect(state.departments, const [testDepartment]);
+      expect(state.message, '같은 학과를 여러 전공으로 선택할 수 없어요.');
+      expect(state.isSubmitting, isFalse);
+    },
+  );
+
+  test(
+    'unauthorized major update signs out and returns to authentication',
+    () async {
+      final auth = FakeAuthGateway(currentSession: testSession);
+      final api = FakeStudentApi();
+      api.getProfileHandler = (_) async => testProfile;
+      api.getDepartmentsHandler = () async => const [testDepartment];
+      api.replaceMajorsHandler = (_, _) => Future.error(
+        const StudentApiFailure(
+          StudentApiFailureKind.unauthorized,
+          '로그인이 만료되었습니다.',
+        ),
+      );
+      final controller = OnboardingController(auth: auth, api: api);
+      await controller.initialize();
+      await controller.startMajorEditing();
+
+      await controller.updateMajors(
+        StudentMajorUpdate(primaryDepartmentEntityId: testDepartment.entityId),
+      );
+
+      expect(auth.signOutCalls, 1);
+      expect(controller.state, isA<AuthenticationRequired>());
+    },
+  );
 }

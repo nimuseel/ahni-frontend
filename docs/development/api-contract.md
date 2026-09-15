@@ -4,10 +4,10 @@ The backend-generated OpenAPI document is AHNI Mobile's only API contract. The a
 
 ## Current snapshot
 
-- Backend commit: `9318e1d0f29289a19b13f5b2d32303ba744f5a83`
+- Backend commit: `ab03e096e3ecf06429a09c6081fd831ba6771792`
 - OpenAPI title: `AHNI API`
 - OpenAPI version: `v1`
-- Source SHA-256: `5948ba9e9749834fd8597464afacfe9ec0a886387ffb6059fff54ca145f03992`
+- Source SHA-256: `a2e7449e0a5a2eb5e9fe60a83dc882533c1ae14b0215c2905ced24862defa2bc`
 
 ## Update procedure
 
