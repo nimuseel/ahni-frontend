@@ -1,4 +1,5 @@
 import 'package:ahni_mobile/core/config/app_environment.dart';
+import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
 import 'package:ahni_mobile/features/onboarding/application/onboarding_controller.dart';
 import 'package:ahni_mobile/features/onboarding/presentation/onboarding_page.dart';
 import 'package:flutter/material.dart';
@@ -8,11 +9,13 @@ class AhniApp extends StatelessWidget {
   const AhniApp({
     required this.environment,
     required this.controller,
+    required this.gradeController,
     super.key,
   });
 
   final AppEnvironment environment;
   final OnboardingController controller;
+  final GradeListController gradeController;
 
   @override
   Widget build(BuildContext context) {
@@ -124,7 +127,10 @@ class AhniApp extends StatelessWidget {
           style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
         ),
       ),
-      home: OnboardingPage(controller: controller),
+      home: OnboardingPage(
+        controller: controller,
+        gradeController: gradeController,
+      ),
     );
   }
 }

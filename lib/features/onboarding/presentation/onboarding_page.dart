@@ -1,19 +1,28 @@
 import 'package:ahni_mobile/core/network/student_api.dart';
 import 'package:ahni_mobile/core/presentation/whitespace_wrapped_text.dart';
+import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
+import 'package:ahni_mobile/features/grade/presentation/grade_list_page.dart';
 import 'package:ahni_mobile/features/onboarding/application/onboarding_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class OnboardingPage extends StatefulWidget {
-  const OnboardingPage({required this.controller, super.key});
+  const OnboardingPage({
+    required this.controller,
+    required this.gradeController,
+    super.key,
+  });
 
   final OnboardingController controller;
+  final GradeListController gradeController;
 
   @override
   State<OnboardingPage> createState() => _OnboardingPageState();
 }
 
 class _OnboardingPageState extends State<OnboardingPage> {
+  String? _portalStudentId;
+
   @override
   void initState() {
     super.initState();
@@ -30,6 +39,16 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   void _refresh() {
+    final state = widget.controller.state;
+    final studentId = switch (state) {
+      ProfileReady state => state.profile.studentEntityId,
+      MajorEditing state => state.profile.studentEntityId,
+      _ => null,
+    };
+    if (_portalStudentId != studentId) {
+      _portalStudentId = studentId;
+      widget.gradeController.reset();
+    }
     if (mounted) setState(() {});
   }
 
@@ -54,9 +73,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
         controller: widget.controller,
         state: state,
       ),
-      ProfileReady state => _ProfileView(
-        controller: widget.controller,
-        state: state,
+      ProfileReady state => _StudentPortalView(
+        onboardingController: widget.controller,
+        gradeController: widget.gradeController,
+        profileState: state,
       ),
       MajorEditing state => _MajorEditingView(
         controller: widget.controller,
@@ -666,11 +686,71 @@ class _RegistrationViewState extends State<_RegistrationView> {
   }
 }
 
+class _StudentPortalView extends StatefulWidget {
+  const _StudentPortalView({
+    required this.onboardingController,
+    required this.gradeController,
+    required this.profileState,
+  });
+
+  final OnboardingController onboardingController;
+  final GradeListController gradeController;
+  final ProfileReady profileState;
+
+  @override
+  State<_StudentPortalView> createState() => _StudentPortalViewState();
+}
+
+class _StudentPortalViewState extends State<_StudentPortalView> {
+  var _selectedIndex = 1;
+
+  @override
+  Widget build(BuildContext context) {
+    final navigationBar = NavigationBar(
+      selectedIndex: _selectedIndex,
+      onDestinationSelected: (index) {
+        if (_selectedIndex == index) return;
+        setState(() => _selectedIndex = index);
+      },
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.grading_outlined),
+          selectedIcon: Icon(Icons.grading_rounded),
+          label: '성적',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.person_outline_rounded),
+          selectedIcon: Icon(Icons.person_rounded),
+          label: '내 정보',
+        ),
+      ],
+    );
+
+    if (_selectedIndex == 0) {
+      return GradeListPage(
+        controller: widget.gradeController,
+        onAuthenticationRequired: widget.onboardingController.signOut,
+        bottomNavigationBar: navigationBar,
+      );
+    }
+    return _ProfileView(
+      controller: widget.onboardingController,
+      state: widget.profileState,
+      bottomNavigationBar: navigationBar,
+    );
+  }
+}
+
 class _ProfileView extends StatelessWidget {
-  const _ProfileView({required this.controller, required this.state});
+  const _ProfileView({
+    required this.controller,
+    required this.state,
+    required this.bottomNavigationBar,
+  });
 
   final OnboardingController controller;
   final ProfileReady state;
+  final Widget bottomNavigationBar;
 
   @override
   Widget build(BuildContext context) {
@@ -688,6 +768,7 @@ class _ProfileView extends StatelessWidget {
     return _PageScaffold(
       maxWidth: 560,
       title: '내 정보',
+      bottomNavigationBar: bottomNavigationBar,
       action: IconButton(
         onPressed: controller.signOut,
         tooltip: '로그아웃',
@@ -1051,6 +1132,7 @@ class _PageScaffold extends StatelessWidget {
     this.title = 'AHNI',
     this.maxWidth = 400,
     this.fillViewport = false,
+    this.bottomNavigationBar,
   });
 
   final Widget child;
@@ -1058,10 +1140,12 @@ class _PageScaffold extends StatelessWidget {
   final String title;
   final double maxWidth;
   final bool fillViewport;
+  final Widget? bottomNavigationBar;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: bottomNavigationBar,
       appBar: AppBar(
         titleSpacing: 24,
         title: Text(title),
