@@ -1,17 +1,24 @@
 import 'package:ahni_mobile/core/presentation/whitespace_wrapped_text.dart';
+import 'package:ahni_mobile/features/grade/application/course_catalog_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
+import 'package:ahni_mobile/features/grade/application/grade_registration_controller.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
+import 'package:ahni_mobile/features/grade/presentation/grade_registration_page.dart';
 import 'package:flutter/material.dart';
 
 class GradeListPage extends StatefulWidget {
   const GradeListPage({
     required this.controller,
+    required this.courseController,
+    required this.registrationController,
     required this.onAuthenticationRequired,
     this.bottomNavigationBar,
     super.key,
   });
 
   final GradeListController controller;
+  final CourseCatalogController courseController;
+  final GradeRegistrationController registrationController;
   final VoidCallback onAuthenticationRequired;
   final Widget? bottomNavigationBar;
 
@@ -50,18 +57,53 @@ class _GradeListPageState extends State<GradeListPage> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _openRegistration() async {
+    widget.registrationController.reset();
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (registrationContext) => GradeRegistrationPage(
+          courseController: widget.courseController,
+          registrationController: widget.registrationController,
+          onRegistered: (_) async {
+            await widget.controller.retry();
+            if (registrationContext.mounted) {
+              Navigator.of(registrationContext).pop();
+            }
+          },
+          onAuthenticationRequired: () {
+            if (registrationContext.mounted) {
+              Navigator.of(registrationContext).pop();
+            }
+            widget.onAuthenticationRequired();
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: const Key('grade-list-page'),
-      appBar: AppBar(titleSpacing: 24, title: const Text('성적')),
+      appBar: AppBar(
+        titleSpacing: 24,
+        title: const Text('성적'),
+        actions: [
+          TextButton(
+            key: const Key('open-grade-registration'),
+            onPressed: _openRegistration,
+            child: const Text('등록'),
+          ),
+          const SizedBox(width: 12),
+        ],
+      ),
       bottomNavigationBar: widget.bottomNavigationBar,
       body: SafeArea(
         top: false,
         child: switch (widget.controller.state) {
           GradeListInitial() || GradeListLoading() => const _LoadingView(),
           GradeListReady state => _GradeList(grades: state.grades),
-          GradeListEmpty() => const _EmptyView(),
+          GradeListEmpty() => _EmptyView(onRegister: _openRegistration),
           GradeListFailure state => _FailureView(
             message: state.message,
             onRetry: widget.controller.retry,
@@ -247,7 +289,9 @@ class _LoadingView extends StatelessWidget {
 }
 
 class _EmptyView extends StatelessWidget {
-  const _EmptyView();
+  const _EmptyView({required this.onRegister});
+
+  final VoidCallback onRegister;
 
   @override
   Widget build(BuildContext context) {
@@ -255,6 +299,11 @@ class _EmptyView extends StatelessWidget {
       icon: Icons.school_outlined,
       title: '아직 등록된 성적이 없어요',
       message: '성적을 등록하면 학기별 이력을 여기서 확인할 수 있어요.',
+      action: FilledButton(
+        key: const Key('open-grade-registration-empty'),
+        onPressed: onRegister,
+        child: const Text('성적 등록'),
+      ),
     );
   }
 }

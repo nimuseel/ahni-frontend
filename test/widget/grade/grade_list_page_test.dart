@@ -1,5 +1,7 @@
 import 'package:ahni_mobile/core/auth/auth_gateway.dart';
+import 'package:ahni_mobile/features/grade/application/course_catalog_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
+import 'package:ahni_mobile/features/grade/application/grade_registration_controller.dart';
 import 'package:ahni_mobile/features/grade/data/grade_api.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
 import 'package:ahni_mobile/features/grade/presentation/grade_list_page.dart';
@@ -45,6 +47,54 @@ void main() {
       findWhitespaceWrappedText('성적을 등록하면 학기별 이력을 여기서 확인할 수 있어요.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('registers a grade from the empty state and refreshes the list', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway(currentSession: testSession);
+    final api = FakeGradeApi()..results = const [];
+    api.registerHandler = (_, _) async {
+      api.results = [testGrade];
+      return testGrade;
+    };
+
+    await tester.pumpWidget(
+      _testApp(
+        GradeListController(auth: auth, api: api),
+        courseController: buildTestCourseCatalogController(auth: auth),
+        registrationController: GradeRegistrationController(
+          auth: auth,
+          api: api,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('open-grade-registration-empty')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('grade-registration-page')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('course-picker')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('course-option-course-id-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('term-SECOND')));
+    final gradeCode = find.byKey(const Key('grade-code'));
+    await tester.ensureVisible(gradeCode);
+    await tester.tap(gradeCode);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('A+').last);
+    final submit = find.byKey(const Key('register-grade'));
+    await tester.ensureVisible(submit);
+    await tester.pumpAndSettle();
+    await tester.tap(submit);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('grade-registration-page')), findsNothing);
+    expect(find.text('프로그래밍 기초'), findsOneWidget);
+    expect(api.registerCalls, 1);
+    expect(api.calls, 2);
   });
 
   testWidgets('retries a recoverable grade-list failure', (tester) async {
@@ -131,6 +181,8 @@ AuthGateway _authenticated() {
 Widget _testApp(
   GradeListController controller, {
   VoidCallback? onAuthenticationRequired,
+  CourseCatalogController? courseController,
+  GradeRegistrationController? registrationController,
 }) {
   return MaterialApp(
     theme: ThemeData(
@@ -142,6 +194,9 @@ Widget _testApp(
     ),
     home: GradeListPage(
       controller: controller,
+      courseController: courseController ?? buildTestCourseCatalogController(),
+      registrationController:
+          registrationController ?? buildTestGradeRegistrationController(),
       onAuthenticationRequired: onAuthenticationRequired ?? () {},
     ),
   );

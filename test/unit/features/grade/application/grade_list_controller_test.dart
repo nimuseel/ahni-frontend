@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:ahni_mobile/core/auth/auth_gateway.dart';
 import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
 import 'package:ahni_mobile/features/grade/data/grade_api.dart';
+import 'package:ahni_mobile/features/grade/domain/grade_registration.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -130,6 +131,14 @@ class _FakeGradeApi implements GradeApi {
     if (error case final value?) throw value;
     if (handler case final value?) return value(accessToken);
     return results;
+  }
+
+  @override
+  Future<GradeRecord> registerGrade(
+    String accessToken,
+    GradeRegistration registration,
+  ) async {
+    return _testGrade;
   }
 }
 

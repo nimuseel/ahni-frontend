@@ -1,6 +1,8 @@
 import 'package:ahni_mobile/core/network/student_api.dart';
 import 'package:ahni_mobile/core/presentation/whitespace_wrapped_text.dart';
+import 'package:ahni_mobile/features/grade/application/course_catalog_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
+import 'package:ahni_mobile/features/grade/application/grade_registration_controller.dart';
 import 'package:ahni_mobile/features/grade/presentation/grade_list_page.dart';
 import 'package:ahni_mobile/features/onboarding/application/onboarding_controller.dart';
 import 'package:flutter/material.dart';
@@ -10,11 +12,15 @@ class OnboardingPage extends StatefulWidget {
   const OnboardingPage({
     required this.controller,
     required this.gradeController,
+    required this.courseController,
+    required this.gradeRegistrationController,
     super.key,
   });
 
   final OnboardingController controller;
   final GradeListController gradeController;
+  final CourseCatalogController courseController;
+  final GradeRegistrationController gradeRegistrationController;
 
   @override
   State<OnboardingPage> createState() => _OnboardingPageState();
@@ -48,6 +54,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
     if (_portalStudentId != studentId) {
       _portalStudentId = studentId;
       widget.gradeController.reset();
+      widget.courseController.reset();
+      widget.gradeRegistrationController.reset();
     }
     if (mounted) setState(() {});
   }
@@ -76,6 +84,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
       ProfileReady state => _StudentPortalView(
         onboardingController: widget.controller,
         gradeController: widget.gradeController,
+        courseController: widget.courseController,
+        gradeRegistrationController: widget.gradeRegistrationController,
         profileState: state,
       ),
       MajorEditing state => _MajorEditingView(
@@ -690,11 +700,15 @@ class _StudentPortalView extends StatefulWidget {
   const _StudentPortalView({
     required this.onboardingController,
     required this.gradeController,
+    required this.courseController,
+    required this.gradeRegistrationController,
     required this.profileState,
   });
 
   final OnboardingController onboardingController;
   final GradeListController gradeController;
+  final CourseCatalogController courseController;
+  final GradeRegistrationController gradeRegistrationController;
   final ProfileReady profileState;
 
   @override
@@ -729,6 +743,8 @@ class _StudentPortalViewState extends State<_StudentPortalView> {
     if (_selectedIndex == 0) {
       return GradeListPage(
         controller: widget.gradeController,
+        courseController: widget.courseController,
+        registrationController: widget.gradeRegistrationController,
         onAuthenticationRequired: widget.onboardingController.signOut,
         bottomNavigationBar: navigationBar,
       );

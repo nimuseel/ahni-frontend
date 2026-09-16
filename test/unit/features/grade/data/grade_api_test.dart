@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:ahni_mobile/features/grade/data/grade_api.dart';
+import 'package:ahni_mobile/features/grade/domain/grade_registration.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -139,4 +140,103 @@ void main() {
       ),
     );
   });
+
+  test(
+    'POST /grades sends the registration and parses the created grade',
+    () async {
+      final api = HttpGradeApi(
+        baseUri: Uri.parse('https://api.ahni.test'),
+        client: MockClient((request) async {
+          expect(request.method, 'POST');
+          expect(request.url.path, '/api/v1/grades');
+          expect(request.headers['authorization'], 'Bearer jwt');
+          expect(request.headers['content-type'], 'application/json');
+          expect(jsonDecode(request.body), {
+            'courseEntityId': 'course-id-1',
+            'academicYear': 2025,
+            'term': 'SECOND',
+            'gradeCode': 'A_PLUS',
+            'credit': 3.0,
+            'rpl': false,
+            'retake': true,
+          });
+          return http.Response(
+            jsonEncode({
+              'entityId': 'grade-id-1',
+              'course': {
+                'entityId': 'course-id-1',
+                'code': 'CSE101',
+                'name': '프로그래밍 기초',
+                'category': 'MAJOR',
+                'department': null,
+              },
+              'academicYear': 2025,
+              'term': 'SECOND',
+              'gradeCode': 'A_PLUS',
+              'gradePoint': 4.5,
+              'credit': 3.0,
+              'rpl': false,
+              'retake': true,
+              'createdAt': '2026-09-16T01:00:00Z',
+              'updatedAt': '2026-09-16T01:00:00Z',
+            }),
+            201,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        }),
+      );
+
+      final grade = await api.registerGrade('jwt', _registration);
+
+      expect(grade.entityId, 'grade-id-1');
+      expect(grade.course.code, 'CSE101');
+      expect(grade.gradeCode, GradeCode.aPlus);
+      expect(grade.retake, isTrue);
+    },
+  );
+
+  test('duplicate registrations use an actionable conflict message', () async {
+    final api = HttpGradeApi(
+      baseUri: Uri.parse('https://api.ahni.test'),
+      client: MockClient(
+        (_) async => http.Response.bytes(
+          utf8.encode(
+            jsonEncode({
+              'code': 'GRADE_ALREADY_REGISTERED',
+              'message': '해당 학기의 과목 성적이 이미 등록되어 있습니다.',
+            }),
+          ),
+          409,
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        ),
+      ),
+    );
+
+    expect(
+      () => api.registerGrade('jwt', _registration),
+      throwsA(
+        isA<GradeApiFailure>()
+            .having(
+              (failure) => failure.kind,
+              'kind',
+              GradeApiFailureKind.conflict,
+            )
+            .having(
+              (failure) => failure.userMessage,
+              'userMessage',
+              '이미 등록된 과목이에요. 수강연도와 학기를 확인해 주세요.',
+            ),
+      ),
+    );
+  });
 }
+
+const _registration = GradeRegistration(
+  courseEntityId: 'course-id-1',
+  academicYear: 2025,
+  term: AcademicTerm.second,
+  gradeCode: GradeCode.aPlus,
+  credit: 3,
+  rpl: false,
+  retake: true,
+);
