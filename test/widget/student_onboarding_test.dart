@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/onboarding_fakes.dart';
+import '../support/grade_fakes.dart';
 import '../support/whitespace_wrapped_text_finder.dart';
 
 void main() {
@@ -28,7 +29,11 @@ void main() {
     );
 
     await tester.pumpWidget(
-      AhniApp(environment: AppEnvironment.development, controller: controller),
+      AhniApp(
+        environment: AppEnvironment.development,
+        controller: controller,
+        gradeController: buildTestGradeListController(),
+      ),
     );
     await tester.pump();
     final loadingText = findWhitespaceWrappedText('학생 정보를 불러오는 중이에요…');
@@ -71,7 +76,11 @@ void main() {
     );
 
     await tester.pumpWidget(
-      AhniApp(environment: AppEnvironment.development, controller: controller),
+      AhniApp(
+        environment: AppEnvironment.development,
+        controller: controller,
+        gradeController: buildTestGradeListController(),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -127,7 +136,11 @@ void main() {
     );
 
     await tester.pumpWidget(
-      AhniApp(environment: AppEnvironment.development, controller: controller),
+      AhniApp(
+        environment: AppEnvironment.development,
+        controller: controller,
+        gradeController: buildTestGradeListController(),
+      ),
     );
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(OutlinedButton, '전공 수정'));
@@ -166,7 +179,11 @@ void main() {
     addTearDown(auth.dispose);
 
     await tester.pumpWidget(
-      AhniApp(environment: AppEnvironment.development, controller: controller),
+      AhniApp(
+        environment: AppEnvironment.development,
+        controller: controller,
+        gradeController: buildTestGradeListController(),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -261,7 +278,11 @@ void main() {
     );
 
     await tester.pumpWidget(
-      AhniApp(environment: AppEnvironment.development, controller: controller),
+      AhniApp(
+        environment: AppEnvironment.development,
+        controller: controller,
+        gradeController: buildTestGradeListController(),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -313,7 +334,11 @@ void main() {
     addTearDown(auth.dispose);
 
     await tester.pumpWidget(
-      AhniApp(environment: AppEnvironment.development, controller: controller),
+      AhniApp(
+        environment: AppEnvironment.development,
+        controller: controller,
+        gradeController: buildTestGradeListController(),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -367,6 +392,7 @@ void main() {
         child: AhniApp(
           environment: AppEnvironment.development,
           controller: controller,
+          gradeController: buildTestGradeListController(),
         ),
       ),
     );
@@ -417,7 +443,11 @@ void main() {
     );
 
     await tester.pumpWidget(
-      AhniApp(environment: AppEnvironment.development, controller: controller),
+      AhniApp(
+        environment: AppEnvironment.development,
+        controller: controller,
+        gradeController: buildTestGradeListController(),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -492,7 +522,11 @@ void main() {
     );
 
     await tester.pumpWidget(
-      AhniApp(environment: AppEnvironment.development, controller: controller),
+      AhniApp(
+        environment: AppEnvironment.development,
+        controller: controller,
+        gradeController: buildTestGradeListController(),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -541,6 +575,7 @@ void main() {
         child: AhniApp(
           environment: AppEnvironment.development,
           controller: controller,
+          gradeController: buildTestGradeListController(),
         ),
       ),
     );
@@ -571,6 +606,7 @@ void main() {
         child: AhniApp(
           environment: AppEnvironment.development,
           controller: controller,
+          gradeController: buildTestGradeListController(),
         ),
       ),
     );

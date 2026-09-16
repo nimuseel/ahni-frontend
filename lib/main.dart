@@ -2,6 +2,8 @@ import 'package:ahni_mobile/app/ahni_app.dart';
 import 'package:ahni_mobile/core/auth/auth_gateway.dart';
 import 'package:ahni_mobile/core/config/app_environment.dart';
 import 'package:ahni_mobile/core/network/student_api.dart';
+import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
+import 'package:ahni_mobile/features/grade/data/grade_api.dart';
 import 'package:ahni_mobile/features/onboarding/application/onboarding_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -38,15 +40,18 @@ Future<void> main() async {
     ),
   );
 
+  final auth = SupabaseAuthGateway(Supabase.instance.client);
+  final httpClient = http.Client();
   runApp(
     AhniApp(
       environment: AppEnvironment.parse(configuredEnvironment),
       controller: OnboardingController(
-        auth: SupabaseAuthGateway(Supabase.instance.client),
-        api: HttpStudentApi(
-          baseUri: Uri.parse(apiBaseUrl),
-          client: http.Client(),
-        ),
+        auth: auth,
+        api: HttpStudentApi(baseUri: Uri.parse(apiBaseUrl), client: httpClient),
+      ),
+      gradeController: GradeListController(
+        auth: auth,
+        api: HttpGradeApi(baseUri: Uri.parse(apiBaseUrl), client: httpClient),
       ),
     ),
   );

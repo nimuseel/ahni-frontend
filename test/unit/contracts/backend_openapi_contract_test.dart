@@ -19,6 +19,8 @@ void main() {
     expect(paths, contains('/api/v1/students/me'));
     expect(paths, contains('/api/v1/students/me/majors'));
     expect(paths, contains('/api/v1/departments'));
+    expect(paths, contains('/api/v1/grades'));
+    expect(paths, contains('/api/v1/grades/{gradeEntityId}'));
 
     final components = contract['components']! as Map<String, Object?>;
     final schemas = components['schemas']! as Map<String, Object?>;
@@ -33,5 +35,16 @@ void main() {
     final profileProperties = profile['properties']! as Map<String, Object?>;
     expect(profileProperties, contains('doubleMajorDepartment'));
     expect(profileProperties, contains('minorDepartment'));
+
+    final grade = schemas['GradeResponse']! as Map<String, Object?>;
+    final gradeProperties = grade['properties']! as Map<String, Object?>;
+    expect(gradeProperties, contains('course'));
+    expect(gradeProperties, contains('academicYear'));
+    expect(gradeProperties, contains('term'));
+    expect(gradeProperties, contains('gradeCode'));
+    expect(gradeProperties, contains('gradePoint'));
+    expect(gradeProperties, contains('credit'));
+    expect(gradeProperties, contains('rpl'));
+    expect(gradeProperties, contains('retake'));
   });
 }

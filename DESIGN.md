@@ -96,6 +96,20 @@ Only status semantics may add colors beyond this set in future feature branches.
 - Accent-soft surface containing the student's display identity, primary department, and account or enrollment status.
 - Use only real profile data; omit unavailable dashboard metrics rather than inventing placeholders.
 
+### Grade list
+
+- Group grade rows by academic year and term so the section heading is the primary navigation cue.
+- Use one section surface per term and separate courses with quiet dividers; do not wrap every course in its own card.
+- Course name leads each row. Course code, credits, RPL, and retake information remain supporting metadata.
+- Grade codes are right-aligned text with strong contrast. Do not calculate or display a GPA until the backend provides the policy result.
+- Loading appears directly on the canvas. Empty and recoverable-error states use concise guidance, and errors provide a 44-pixel retry action.
+
+### Bottom navigation
+
+- Show bottom navigation only after an authenticated student profile is ready.
+- The first two real destinations are `성적` and `내 정보`; inactive or future destinations are not shown.
+- Preserve a clear selected label and icon, and reset student-owned feature state when the authenticated student changes.
+
 ### Status message
 
 - Inline live region within the related task card.
@@ -124,4 +138,4 @@ Only status semantics may add colors beyond this set in future feature branches.
 - No dark theme is defined in the harness branch.
 - No reusable feature components are created until a real flow needs them.
 - Visual fidelity for individual wireframe screens is deferred to their feature branches.
-- Bottom navigation is deferred until at least two real destinations exist; inactive reference navigation is not reproduced.
+- Additional bottom-navigation destinations remain deferred until each destination has a working screen.

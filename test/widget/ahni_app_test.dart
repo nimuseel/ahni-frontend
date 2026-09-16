@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/onboarding_fakes.dart';
+import '../support/grade_fakes.dart';
 import '../support/whitespace_wrapped_text_finder.dart';
 
 void main() {
@@ -14,7 +15,11 @@ void main() {
       api: FakeStudentApi(),
     );
     await tester.pumpWidget(
-      AhniApp(environment: AppEnvironment.development, controller: controller),
+      AhniApp(
+        environment: AppEnvironment.development,
+        controller: controller,
+        gradeController: buildTestGradeListController(),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -54,7 +59,11 @@ void main() {
     );
 
     await tester.pumpWidget(
-      AhniApp(environment: AppEnvironment.development, controller: controller),
+      AhniApp(
+        environment: AppEnvironment.development,
+        controller: controller,
+        gradeController: buildTestGradeListController(),
+      ),
     );
     await tester.pumpAndSettle();
 
