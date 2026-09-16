@@ -33,6 +33,8 @@ void main() {
         environment: AppEnvironment.development,
         controller: controller,
         gradeController: buildTestGradeListController(),
+        courseController: buildTestCourseCatalogController(),
+        gradeRegistrationController: buildTestGradeRegistrationController(),
       ),
     );
     await tester.pump();
@@ -80,6 +82,8 @@ void main() {
         environment: AppEnvironment.development,
         controller: controller,
         gradeController: buildTestGradeListController(),
+        courseController: buildTestCourseCatalogController(),
+        gradeRegistrationController: buildTestGradeRegistrationController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -140,6 +144,8 @@ void main() {
         environment: AppEnvironment.development,
         controller: controller,
         gradeController: buildTestGradeListController(),
+        courseController: buildTestCourseCatalogController(),
+        gradeRegistrationController: buildTestGradeRegistrationController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -183,6 +189,8 @@ void main() {
         environment: AppEnvironment.development,
         controller: controller,
         gradeController: buildTestGradeListController(),
+        courseController: buildTestCourseCatalogController(),
+        gradeRegistrationController: buildTestGradeRegistrationController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -282,6 +290,8 @@ void main() {
         environment: AppEnvironment.development,
         controller: controller,
         gradeController: buildTestGradeListController(),
+        courseController: buildTestCourseCatalogController(),
+        gradeRegistrationController: buildTestGradeRegistrationController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -338,6 +348,8 @@ void main() {
         environment: AppEnvironment.development,
         controller: controller,
         gradeController: buildTestGradeListController(),
+        courseController: buildTestCourseCatalogController(),
+        gradeRegistrationController: buildTestGradeRegistrationController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -393,6 +405,8 @@ void main() {
           environment: AppEnvironment.development,
           controller: controller,
           gradeController: buildTestGradeListController(),
+          courseController: buildTestCourseCatalogController(),
+          gradeRegistrationController: buildTestGradeRegistrationController(),
         ),
       ),
     );
@@ -447,6 +461,8 @@ void main() {
         environment: AppEnvironment.development,
         controller: controller,
         gradeController: buildTestGradeListController(),
+        courseController: buildTestCourseCatalogController(),
+        gradeRegistrationController: buildTestGradeRegistrationController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -526,6 +542,8 @@ void main() {
         environment: AppEnvironment.development,
         controller: controller,
         gradeController: buildTestGradeListController(),
+        courseController: buildTestCourseCatalogController(),
+        gradeRegistrationController: buildTestGradeRegistrationController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -576,6 +594,8 @@ void main() {
           environment: AppEnvironment.development,
           controller: controller,
           gradeController: buildTestGradeListController(),
+          courseController: buildTestCourseCatalogController(),
+          gradeRegistrationController: buildTestGradeRegistrationController(),
         ),
       ),
     );
@@ -607,6 +627,8 @@ void main() {
           environment: AppEnvironment.development,
           controller: controller,
           gradeController: buildTestGradeListController(),
+          courseController: buildTestCourseCatalogController(),
+          gradeRegistrationController: buildTestGradeRegistrationController(),
         ),
       ),
     );

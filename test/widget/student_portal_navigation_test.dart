@@ -27,6 +27,8 @@ void main() {
         environment: AppEnvironment.development,
         controller: onboardingController,
         gradeController: gradeController,
+        courseController: buildTestCourseCatalogController(),
+        gradeRegistrationController: buildTestGradeRegistrationController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -64,6 +66,8 @@ void main() {
         environment: AppEnvironment.development,
         controller: onboardingController,
         gradeController: gradeController,
+        courseController: buildTestCourseCatalogController(),
+        gradeRegistrationController: buildTestGradeRegistrationController(),
       ),
     );
     await tester.pumpAndSettle();

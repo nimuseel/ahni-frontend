@@ -1,6 +1,11 @@
 import 'package:ahni_mobile/core/auth/auth_gateway.dart';
+import 'package:ahni_mobile/features/grade/application/course_catalog_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
+import 'package:ahni_mobile/features/grade/application/grade_registration_controller.dart';
+import 'package:ahni_mobile/features/grade/data/course_api.dart';
 import 'package:ahni_mobile/features/grade/data/grade_api.dart';
+import 'package:ahni_mobile/features/grade/domain/course_catalog_item.dart';
+import 'package:ahni_mobile/features/grade/domain/grade_registration.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
 
 import 'onboarding_fakes.dart';
@@ -15,12 +20,50 @@ GradeListController buildTestGradeListController({
   );
 }
 
+CourseCatalogController buildTestCourseCatalogController({
+  AuthGateway? auth,
+  List<CourseCatalogItem> courses = const [testCourse],
+}) {
+  return CourseCatalogController(
+    auth: auth ?? FakeAuthGateway(currentSession: testSession),
+    api: FakeCourseApi()..results = courses,
+  );
+}
+
+GradeRegistrationController buildTestGradeRegistrationController({
+  AuthGateway? auth,
+  GradeApi? api,
+}) {
+  return GradeRegistrationController(
+    auth: auth ?? FakeAuthGateway(currentSession: testSession),
+    api: api ?? FakeGradeApi(),
+  );
+}
+
+class FakeCourseApi implements CourseApi {
+  List<CourseCatalogItem> results = const [];
+  Object? error;
+
+  @override
+  Future<List<CourseCatalogItem>> getCourses(String accessToken) async {
+    if (error case final value?) throw value;
+    return results;
+  }
+}
+
 class FakeGradeApi implements GradeApi {
   List<GradeRecord> results = const [];
   Object? error;
   Future<List<GradeRecord>> Function(String accessToken)? handler;
+  Future<GradeRecord> Function(
+    String accessToken,
+    GradeRegistration registration,
+  )?
+  registerHandler;
   String? lastAccessToken;
+  GradeRegistration? lastRegistration;
   int calls = 0;
+  int registerCalls = 0;
 
   @override
   Future<List<GradeRecord>> getGrades(String accessToken) async {
@@ -29,6 +72,21 @@ class FakeGradeApi implements GradeApi {
     if (error case final value?) throw value;
     if (handler case final value?) return value(accessToken);
     return results;
+  }
+
+  @override
+  Future<GradeRecord> registerGrade(
+    String accessToken,
+    GradeRegistration registration,
+  ) async {
+    registerCalls++;
+    lastAccessToken = accessToken;
+    lastRegistration = registration;
+    if (error case final value?) throw value;
+    if (registerHandler case final value?) {
+      return value(accessToken, registration);
+    }
+    return testGrade;
   }
 }
 
@@ -50,6 +108,15 @@ final testGrade = GradeRecord(
   retake: true,
   createdAt: DateTime.utc(2026, 9, 15),
   updatedAt: DateTime.utc(2026, 9, 15),
+);
+
+const testCourse = CourseCatalogItem(
+  entityId: 'course-id-1',
+  code: 'CSE101',
+  name: '프로그래밍 기초',
+  credit: 3,
+  category: CourseCategory.major,
+  department: GradeDepartment(entityId: 'department-id', name: '소프트웨어융합공학과'),
 );
 
 final testPassGrade = GradeRecord(
