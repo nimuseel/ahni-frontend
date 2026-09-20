@@ -21,6 +21,7 @@ void main() {
         gradeController: buildTestGradeListController(),
         courseController: buildTestCourseCatalogController(),
         gradeRegistrationController: buildTestGradeRegistrationController(),
+        gradeEditController: buildTestGradeEditController(),
       ),
     );
     await tester.pumpAndSettle();

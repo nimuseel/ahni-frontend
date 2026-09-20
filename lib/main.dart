@@ -3,6 +3,7 @@ import 'package:ahni_mobile/core/auth/auth_gateway.dart';
 import 'package:ahni_mobile/core/config/app_environment.dart';
 import 'package:ahni_mobile/core/network/student_api.dart';
 import 'package:ahni_mobile/features/grade/application/course_catalog_controller.dart';
+import 'package:ahni_mobile/features/grade/application/grade_edit_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_registration_controller.dart';
 import 'package:ahni_mobile/features/grade/data/course_api.dart';
@@ -63,6 +64,7 @@ Future<void> main() async {
         auth: auth,
         api: gradeApi,
       ),
+      gradeEditController: GradeEditController(auth: auth, api: gradeApi),
     ),
   );
 }

@@ -4,6 +4,7 @@ import 'package:ahni_mobile/features/grade/application/grade_registration_contro
 import 'package:ahni_mobile/features/grade/data/grade_api.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_registration.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
+import 'package:ahni_mobile/features/grade/domain/grade_update.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../support/grade_fakes.dart';
@@ -118,6 +119,16 @@ class _FakeGradeApi implements GradeApi {
     }
     return registerResult!;
   }
+
+  @override
+  Future<GradeRecord> updateGrade(
+    String accessToken,
+    String gradeEntityId,
+    GradeUpdate update,
+  ) async => testGrade;
+
+  @override
+  Future<void> deleteGrade(String accessToken, String gradeEntityId) async {}
 }
 
 const _registration = GradeRegistration(

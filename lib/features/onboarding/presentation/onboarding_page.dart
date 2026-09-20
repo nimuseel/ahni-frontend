@@ -1,6 +1,7 @@
 import 'package:ahni_mobile/core/network/student_api.dart';
 import 'package:ahni_mobile/core/presentation/whitespace_wrapped_text.dart';
 import 'package:ahni_mobile/features/grade/application/course_catalog_controller.dart';
+import 'package:ahni_mobile/features/grade/application/grade_edit_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_registration_controller.dart';
 import 'package:ahni_mobile/features/grade/presentation/grade_list_page.dart';
@@ -14,6 +15,7 @@ class OnboardingPage extends StatefulWidget {
     required this.gradeController,
     required this.courseController,
     required this.gradeRegistrationController,
+    required this.gradeEditController,
     super.key,
   });
 
@@ -21,6 +23,7 @@ class OnboardingPage extends StatefulWidget {
   final GradeListController gradeController;
   final CourseCatalogController courseController;
   final GradeRegistrationController gradeRegistrationController;
+  final GradeEditController gradeEditController;
 
   @override
   State<OnboardingPage> createState() => _OnboardingPageState();
@@ -56,6 +59,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       widget.gradeController.reset();
       widget.courseController.reset();
       widget.gradeRegistrationController.reset();
+      widget.gradeEditController.reset();
     }
     if (mounted) setState(() {});
   }
@@ -86,6 +90,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
         gradeController: widget.gradeController,
         courseController: widget.courseController,
         gradeRegistrationController: widget.gradeRegistrationController,
+        gradeEditController: widget.gradeEditController,
         profileState: state,
       ),
       MajorEditing state => _MajorEditingView(
@@ -702,6 +707,7 @@ class _StudentPortalView extends StatefulWidget {
     required this.gradeController,
     required this.courseController,
     required this.gradeRegistrationController,
+    required this.gradeEditController,
     required this.profileState,
   });
 
@@ -709,6 +715,7 @@ class _StudentPortalView extends StatefulWidget {
   final GradeListController gradeController;
   final CourseCatalogController courseController;
   final GradeRegistrationController gradeRegistrationController;
+  final GradeEditController gradeEditController;
   final ProfileReady profileState;
 
   @override
@@ -745,6 +752,7 @@ class _StudentPortalViewState extends State<_StudentPortalView> {
         controller: widget.gradeController,
         courseController: widget.courseController,
         registrationController: widget.gradeRegistrationController,
+        editController: widget.gradeEditController,
         onAuthenticationRequired: widget.onboardingController.signOut,
         bottomNavigationBar: navigationBar,
       );
