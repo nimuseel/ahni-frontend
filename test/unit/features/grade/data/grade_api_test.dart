@@ -39,7 +39,7 @@ void main() {
                   'gradePoint': 4.5,
                   'credit': 3.0,
                   'rpl': false,
-                  'retake': true,
+                  'replacedGradeEntityId': 'grade-id-0',
                   'createdAt': '2026-09-15T01:00:00Z',
                   'updatedAt': '2026-09-15T02:00:00Z',
                 },
@@ -58,7 +58,7 @@ void main() {
                   'gradePoint': null,
                   'credit': 2,
                   'rpl': true,
-                  'retake': false,
+                  'replacedGradeEntityId': null,
                   'createdAt': '2026-09-14T01:00:00Z',
                   'updatedAt': '2026-09-14T01:00:00Z',
                 },
@@ -79,13 +79,49 @@ void main() {
       expect(records.first.gradeCode, GradeCode.aPlus);
       expect(records.first.gradePoint, 4.5);
       expect(records.first.credit, 3.0);
-      expect(records.first.retake, isTrue);
+      expect(records.first.replacedGradeEntityId, 'grade-id-0');
+      expect(records.first.isRetake, isTrue);
       expect(records.last.course.department, isNull);
       expect(records.last.gradeCode, isNull);
       expect(records.last.gradePoint, isNull);
       expect(records.last.rpl, isTrue);
     },
   );
+
+  test('GET /grades/summary parses the policy result', () async {
+    final api = HttpGradeApi(
+      baseUri: Uri.parse('https://api.ahni.test'),
+      client: MockClient((request) async {
+        expect(request.method, 'GET');
+        expect(request.url.path, '/api/v1/grades/summary');
+        expect(request.headers['authorization'], 'Bearer jwt');
+        return http.Response(
+          jsonEncode({
+            'gpa': 3.83,
+            'completedCredits': 42.0,
+            'gpaCredits': 36.0,
+            'categories': [
+              {
+                'category': 'MAJOR',
+                'gpa': 4.02,
+                'completedCredits': 24.0,
+                'gpaCredits': 21.0,
+              },
+            ],
+          }),
+          200,
+        );
+      }),
+    );
+
+    final summary = await api.getSummary('jwt');
+
+    expect(summary.gpa, 3.83);
+    expect(summary.completedCredits, 42);
+    expect(summary.gpaCredits, 36);
+    expect(summary.categories.single.category, CourseCategory.major);
+    expect(summary.categories.single.gpa, 4.02);
+  });
 
   test('malformed grade responses become a safe recoverable failure', () async {
     final api = HttpGradeApi(
@@ -159,7 +195,7 @@ void main() {
             'gradeCode': 'A_PLUS',
             'credit': 3.0,
             'rpl': false,
-            'retake': true,
+            'replacedGradeEntityId': 'grade-id-0',
           });
           return http.Response(
             jsonEncode({
@@ -177,7 +213,7 @@ void main() {
               'gradePoint': 4.5,
               'credit': 3.0,
               'rpl': false,
-              'retake': true,
+              'replacedGradeEntityId': 'grade-id-0',
               'createdAt': '2026-09-16T01:00:00Z',
               'updatedAt': '2026-09-16T01:00:00Z',
             }),
@@ -192,7 +228,7 @@ void main() {
       expect(grade.entityId, 'grade-id-1');
       expect(grade.course.code, 'CSE101');
       expect(grade.gradeCode, GradeCode.aPlus);
-      expect(grade.retake, isTrue);
+      expect(grade.replacedGradeEntityId, 'grade-id-0');
     },
   );
 
@@ -246,7 +282,7 @@ void main() {
             'gradeCode': 'B_PLUS',
             'credit': 2.0,
             'rpl': false,
-            'retake': true,
+            'replacedGradeEntityId': 'grade-id-0',
           });
           return http.Response.bytes(
             utf8.encode(
@@ -265,7 +301,7 @@ void main() {
                 'gradePoint': 3.5,
                 'credit': 2.0,
                 'rpl': false,
-                'retake': true,
+                'replacedGradeEntityId': 'grade-id-0',
                 'createdAt': '2026-09-16T01:00:00Z',
                 'updatedAt': '2026-09-16T02:00:00Z',
               }),
@@ -342,7 +378,7 @@ const _registration = GradeRegistration(
   gradeCode: GradeCode.aPlus,
   credit: 3,
   rpl: false,
-  retake: true,
+  replacedGradeEntityId: 'grade-id-0',
 );
 
 const _update = GradeUpdate(
@@ -351,5 +387,5 @@ const _update = GradeUpdate(
   gradeCode: GradeCode.bPlus,
   credit: 2,
   rpl: false,
-  retake: true,
+  replacedGradeEntityId: 'grade-id-0',
 );

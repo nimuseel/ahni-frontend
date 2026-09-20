@@ -26,6 +26,9 @@ void main() {
 
     expect(findWhitespaceWrappedText('학기별 성적을 확인하세요'), findsOneWidget);
     expect(find.text('2025년 2학기'), findsOneWidget);
+    expect(find.byKey(const Key('grade-summary')), findsOneWidget);
+    expect(find.text('3.83'), findsOneWidget);
+    expect(find.text('전공'), findsOneWidget);
     expect(find.text('2025년 1학기'), findsOneWidget);
     expect(find.text('프로그래밍 기초'), findsOneWidget);
     expect(find.text('CSE101 · 3학점 · 재수강'), findsOneWidget);

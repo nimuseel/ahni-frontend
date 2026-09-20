@@ -32,7 +32,9 @@ void main() {
     await _tapKey(tester, 'grade-code');
     await tester.pumpAndSettle();
     await tester.tap(find.text('A+').last);
-    await _tapKey(tester, 'retake');
+    await _tapKey(tester, 'replacement-grade');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('2024년 1학기 · B0').last);
     await _tapKey(tester, 'register-grade');
     await tester.pumpAndSettle();
 
@@ -43,7 +45,7 @@ void main() {
     expect(registration.gradeCode, GradeCode.aPlus);
     expect(registration.credit, 3);
     expect(registration.rpl, isFalse);
-    expect(registration.retake, isTrue);
+    expect(registration.replacedGradeEntityId, 'grade-id-0');
     expect(registeredGrade, testGrade);
   });
 
@@ -165,6 +167,7 @@ Widget _testApp({
         api: resolvedGradeApi,
       ),
       initialAcademicYear: 2025,
+      availableGrades: [_previousGrade],
       onRegistered: onRegistered ?? (_) async {},
       onAuthenticationRequired: () {},
     ),
@@ -187,4 +190,23 @@ const _course = CourseCatalogItem(
   credit: 3,
   category: CourseCategory.major,
   department: GradeDepartment(entityId: 'department-id', name: '소프트웨어융합공학과'),
+);
+
+final _previousGrade = GradeRecord(
+  entityId: 'grade-id-0',
+  course: const GradeCourse(
+    entityId: 'course-id-1',
+    code: 'CSE101',
+    name: '프로그래밍 기초',
+    category: CourseCategory.major,
+  ),
+  academicYear: 2024,
+  term: AcademicTerm.first,
+  gradeCode: GradeCode.bZero,
+  gradePoint: 3,
+  credit: 3,
+  rpl: false,
+  replacedGradeEntityId: null,
+  createdAt: DateTime.utc(2025),
+  updatedAt: DateTime.utc(2025),
 );

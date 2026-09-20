@@ -4,6 +4,7 @@ import 'package:ahni_mobile/features/grade/application/grade_edit_controller.dar
 import 'package:ahni_mobile/features/grade/data/grade_api.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_registration.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
+import 'package:ahni_mobile/features/grade/domain/grade_summary.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_update.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -111,6 +112,15 @@ class _FakeGradeApi implements GradeApi {
   Future<List<GradeRecord>> getGrades(String accessToken) async => const [];
 
   @override
+  Future<GradeSummary> getSummary(String accessToken) async =>
+      const GradeSummary(
+        gpa: 0,
+        completedCredits: 0,
+        gpaCredits: 0,
+        categories: [],
+      );
+
+  @override
   Future<GradeRecord> registerGrade(
     String accessToken,
     GradeRegistration registration,
@@ -148,5 +158,5 @@ const _update = GradeUpdate(
   gradeCode: GradeCode.bPlus,
   credit: 2,
   rpl: false,
-  retake: true,
+  replacedGradeEntityId: 'grade-id-0',
 );

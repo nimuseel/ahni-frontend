@@ -5,6 +5,7 @@ import 'dart:convert';
 
 import 'package:ahni_mobile/features/grade/domain/grade_registration.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
+import 'package:ahni_mobile/features/grade/domain/grade_summary.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_update.dart';
 import 'package:http/http.dart' as http;
 
@@ -26,6 +27,8 @@ class GradeApiFailure implements Exception {
 
 abstract interface class GradeApi {
   Future<List<GradeRecord>> getGrades(String accessToken);
+
+  Future<GradeSummary> getSummary(String accessToken);
 
   Future<GradeRecord> registerGrade(
     String accessToken,
@@ -67,6 +70,29 @@ class HttpGradeApi implements GradeApi {
       return body
           .map((item) => GradeRecord.fromJson(item! as Map<String, Object?>))
           .toList(growable: false);
+    } on FormatException catch (_) {
+      throw _malformedResponse;
+    } on TypeError catch (_) {
+      throw _malformedResponse;
+    }
+  }
+
+  @override
+  Future<GradeSummary> getSummary(String accessToken) async {
+    final response = await _request(
+      () => _client.get(
+        baseUri.resolve('/api/v1/grades/summary'),
+        headers: {'authorization': 'Bearer $accessToken'},
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw _failure(
+        response,
+        fallbackMessage: '성적 요약을 불러오지 못했습니다. 다시 시도해 주세요.',
+      );
+    }
+    try {
+      return GradeSummary.fromJson(_decodeMap(response));
     } on FormatException catch (_) {
       throw _malformedResponse;
     } on TypeError catch (_) {
@@ -195,6 +221,10 @@ class HttpGradeApi implements GradeApi {
       'GRADE_NOT_FOUND' => const GradeApiFailure(
         GradeApiFailureKind.notFound,
         '성적 정보를 찾을 수 없어요. 목록을 새로고침해 주세요.',
+      ),
+      'GRADE_REPLACEMENT_CONFLICT' => const GradeApiFailure(
+        GradeApiFailureKind.conflict,
+        '선택한 이전 성적이 다른 재수강 성적에 연결되어 있어요. 성적 목록을 새로고침해 주세요.',
       ),
       _ => GradeApiFailure(GradeApiFailureKind.recoverable, fallbackMessage),
     };

@@ -1,6 +1,8 @@
 import 'package:ahni_mobile/core/presentation/whitespace_wrapped_text.dart';
 import 'package:ahni_mobile/features/grade/application/grade_edit_controller.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
+import 'package:ahni_mobile/features/grade/domain/grade_replacement_candidates.dart';
+import 'package:ahni_mobile/features/grade/presentation/replacement_grade_field.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_update.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +14,7 @@ class GradeEditPage extends StatefulWidget {
     required this.onSaved,
     required this.onDeleted,
     required this.onAuthenticationRequired,
+    this.availableGrades = const [],
     super.key,
   });
 
@@ -20,6 +23,7 @@ class GradeEditPage extends StatefulWidget {
   final Future<void> Function(GradeRecord grade) onSaved;
   final Future<void> Function() onDeleted;
   final VoidCallback onAuthenticationRequired;
+  final List<GradeRecord> availableGrades;
 
   @override
   State<GradeEditPage> createState() => _GradeEditPageState();
@@ -33,7 +37,7 @@ class _GradeEditPageState extends State<GradeEditPage> {
   late AcademicTerm _term;
   GradeCode? _gradeCode;
   late bool _rpl;
-  late bool _retake;
+  String? _replacedGradeEntityId;
 
   @override
   void initState() {
@@ -47,7 +51,7 @@ class _GradeEditPageState extends State<GradeEditPage> {
     _term = widget.grade.term;
     _gradeCode = widget.grade.gradeCode;
     _rpl = widget.grade.rpl;
-    _retake = widget.grade.retake;
+    _replacedGradeEntityId = widget.grade.replacedGradeEntityId;
     widget.controller.addListener(_refresh);
   }
 
@@ -73,7 +77,7 @@ class _GradeEditPageState extends State<GradeEditPage> {
         gradeCode: _rpl ? null : _gradeCode,
         credit: double.parse(_creditController.text.trim()),
         rpl: _rpl,
-        retake: _retake,
+        replacedGradeEntityId: _rpl ? null : _replacedGradeEntityId,
       ),
     );
     if (!mounted) return;
@@ -237,6 +241,7 @@ class _GradeEditPageState extends State<GradeEditPage> {
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly,
                               ],
+                              onChanged: (_) => setState(_syncReplacement),
                               validator: _validateYear,
                               decoration: const InputDecoration(
                                 labelText: '수강연도',
@@ -260,7 +265,10 @@ class _GradeEditPageState extends State<GradeEditPage> {
                                     selected: _term == term,
                                     onSelected: isBusy
                                         ? null
-                                        : (_) => setState(() => _term = term),
+                                        : (_) => setState(() {
+                                            _term = term;
+                                            _syncReplacement();
+                                          }),
                                   ),
                               ],
                             ),
@@ -324,7 +332,10 @@ class _GradeEditPageState extends State<GradeEditPage> {
                                   : (value) {
                                       setState(() {
                                         _rpl = value ?? false;
-                                        if (_rpl) _gradeCode = null;
+                                        if (_rpl) {
+                                          _gradeCode = null;
+                                          _replacedGradeEntityId = null;
+                                        }
                                       });
                                       if (_rpl) {
                                         _gradeFieldKey.currentState?.didChange(
@@ -333,17 +344,18 @@ class _GradeEditPageState extends State<GradeEditPage> {
                                       }
                                     },
                             ),
-                            CheckboxListTile(
-                              key: const Key('edit-retake'),
-                              contentPadding: EdgeInsets.zero,
-                              controlAffinity: ListTileControlAffinity.leading,
-                              title: const Text('재수강한 과목이에요'),
-                              value: _retake,
-                              onChanged: isBusy
-                                  ? null
-                                  : (value) => setState(
-                                      () => _retake = value ?? false,
-                                    ),
+                            const SizedBox(height: 8),
+                            ReplacementGradeField(
+                              fieldKey: const Key('edit-replacement-grade'),
+                              key: ValueKey(
+                                'edit-replacement-${_replacedGradeEntityId ?? 'none'}-${_replacementCandidates.length}',
+                              ),
+                              candidates: _replacementCandidates,
+                              selectedEntityId: _replacedGradeEntityId,
+                              enabled: !isBusy && !_rpl,
+                              onChanged: (value) => setState(
+                                () => _replacedGradeEntityId = value,
+                              ),
                             ),
                             const SizedBox(height: 20),
                             SizedBox(
@@ -395,6 +407,26 @@ class _GradeEditPageState extends State<GradeEditPage> {
         ),
       ),
     );
+  }
+
+  List<GradeRecord> get _replacementCandidates {
+    final year = int.tryParse(_academicYearController.text.trim());
+    if (year == null) return const [];
+    return gradeReplacementCandidates(
+      grades: widget.availableGrades,
+      courseEntityId: widget.grade.course.entityId,
+      academicYear: year,
+      term: _term,
+      currentGradeEntityId: widget.grade.entityId,
+    );
+  }
+
+  void _syncReplacement() {
+    final selected = _replacedGradeEntityId;
+    if (selected == null) return;
+    if (!_replacementCandidates.any((grade) => grade.entityId == selected)) {
+      _replacedGradeEntityId = null;
+    }
   }
 }
 
