@@ -29,6 +29,7 @@ void main() {
         gradeController: gradeController,
         courseController: buildTestCourseCatalogController(),
         gradeRegistrationController: buildTestGradeRegistrationController(),
+        gradeEditController: buildTestGradeEditController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -68,6 +69,7 @@ void main() {
         gradeController: gradeController,
         courseController: buildTestCourseCatalogController(),
         gradeRegistrationController: buildTestGradeRegistrationController(),
+        gradeEditController: buildTestGradeEditController(),
       ),
     );
     await tester.pumpAndSettle();

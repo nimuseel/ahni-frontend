@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:ahni_mobile/features/grade/data/grade_api.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_registration.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
+import 'package:ahni_mobile/features/grade/domain/grade_update.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -229,6 +230,109 @@ void main() {
       ),
     );
   });
+
+  test(
+    'PUT /grades/{id} sends editable values and parses the result',
+    () async {
+      final api = HttpGradeApi(
+        baseUri: Uri.parse('https://api.ahni.test'),
+        client: MockClient((request) async {
+          expect(request.method, 'PUT');
+          expect(request.url.path, '/api/v1/grades/grade-id-1');
+          expect(request.headers['authorization'], 'Bearer jwt');
+          expect(jsonDecode(request.body), {
+            'academicYear': 2024,
+            'term': 'WINTER',
+            'gradeCode': 'B_PLUS',
+            'credit': 2.0,
+            'rpl': false,
+            'retake': true,
+          });
+          return http.Response.bytes(
+            utf8.encode(
+              jsonEncode({
+                'entityId': 'grade-id-1',
+                'course': {
+                  'entityId': 'course-id-1',
+                  'code': 'CSE101',
+                  'name': '프로그래밍 기초',
+                  'category': 'MAJOR',
+                  'department': null,
+                },
+                'academicYear': 2024,
+                'term': 'WINTER',
+                'gradeCode': 'B_PLUS',
+                'gradePoint': 3.5,
+                'credit': 2.0,
+                'rpl': false,
+                'retake': true,
+                'createdAt': '2026-09-16T01:00:00Z',
+                'updatedAt': '2026-09-16T02:00:00Z',
+              }),
+            ),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        }),
+      );
+
+      final grade = await api.updateGrade('jwt', 'grade-id-1', _update);
+
+      expect(grade.academicYear, 2024);
+      expect(grade.term, AcademicTerm.winter);
+      expect(grade.gradeCode, GradeCode.bPlus);
+      expect(grade.credit, 2);
+    },
+  );
+
+  test('DELETE /grades/{id} accepts an empty 204 response', () async {
+    final api = HttpGradeApi(
+      baseUri: Uri.parse('https://api.ahni.test'),
+      client: MockClient((request) async {
+        expect(request.method, 'DELETE');
+        expect(request.url.path, '/api/v1/grades/grade-id-1');
+        expect(request.headers['authorization'], 'Bearer jwt');
+        return http.Response('', 204);
+      }),
+    );
+
+    await api.deleteGrade('jwt', 'grade-id-1');
+  });
+
+  test('missing grades use an actionable refresh message', () async {
+    final api = HttpGradeApi(
+      baseUri: Uri.parse('https://api.ahni.test'),
+      client: MockClient(
+        (_) async => http.Response.bytes(
+          utf8.encode(
+            jsonEncode({
+              'code': 'GRADE_NOT_FOUND',
+              'message': '성적을 찾을 수 없습니다.',
+            }),
+          ),
+          404,
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        ),
+      ),
+    );
+
+    expect(
+      () => api.updateGrade('jwt', 'grade-id-1', _update),
+      throwsA(
+        isA<GradeApiFailure>()
+            .having(
+              (failure) => failure.kind,
+              'kind',
+              GradeApiFailureKind.notFound,
+            )
+            .having(
+              (failure) => failure.userMessage,
+              'userMessage',
+              '성적 정보를 찾을 수 없어요. 목록을 새로고침해 주세요.',
+            ),
+      ),
+    );
+  });
 }
 
 const _registration = GradeRegistration(
@@ -237,6 +341,15 @@ const _registration = GradeRegistration(
   term: AcademicTerm.second,
   gradeCode: GradeCode.aPlus,
   credit: 3,
+  rpl: false,
+  retake: true,
+);
+
+const _update = GradeUpdate(
+  academicYear: 2024,
+  term: AcademicTerm.winter,
+  gradeCode: GradeCode.bPlus,
+  credit: 2,
   rpl: false,
   retake: true,
 );

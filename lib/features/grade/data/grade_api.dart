@@ -5,6 +5,7 @@ import 'dart:convert';
 
 import 'package:ahni_mobile/features/grade/domain/grade_registration.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
+import 'package:ahni_mobile/features/grade/domain/grade_update.dart';
 import 'package:http/http.dart' as http;
 
 enum GradeApiFailureKind {
@@ -12,6 +13,7 @@ enum GradeApiFailureKind {
   studentNotFound,
   validation,
   conflict,
+  notFound,
   recoverable,
 }
 
@@ -29,6 +31,14 @@ abstract interface class GradeApi {
     String accessToken,
     GradeRegistration registration,
   );
+
+  Future<GradeRecord> updateGrade(
+    String accessToken,
+    String gradeEntityId,
+    GradeUpdate update,
+  );
+
+  Future<void> deleteGrade(String accessToken, String gradeEntityId);
 }
 
 class HttpGradeApi implements GradeApi {
@@ -91,6 +101,53 @@ class HttpGradeApi implements GradeApi {
     }
   }
 
+  @override
+  Future<GradeRecord> updateGrade(
+    String accessToken,
+    String gradeEntityId,
+    GradeUpdate update,
+  ) async {
+    final response = await _request(
+      () => _client.put(
+        _gradeUri(gradeEntityId),
+        headers: {
+          'authorization': 'Bearer $accessToken',
+          'content-type': 'application/json',
+        },
+        body: jsonEncode(update.toJson()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw _failure(response, fallbackMessage: '성적을 수정하지 못했습니다. 다시 시도해 주세요.');
+    }
+    try {
+      return GradeRecord.fromJson(_decodeMap(response));
+    } on FormatException catch (_) {
+      throw _malformedResponse;
+    } on TypeError catch (_) {
+      throw _malformedResponse;
+    }
+  }
+
+  @override
+  Future<void> deleteGrade(String accessToken, String gradeEntityId) async {
+    final response = await _request(
+      () => _client.delete(
+        _gradeUri(gradeEntityId),
+        headers: {'authorization': 'Bearer $accessToken'},
+      ),
+    );
+    if (response.statusCode != 204) {
+      throw _failure(response, fallbackMessage: '성적을 삭제하지 못했습니다. 다시 시도해 주세요.');
+    }
+  }
+
+  Uri _gradeUri(String gradeEntityId) {
+    return baseUri.resolve(
+      '/api/v1/grades/${Uri.encodeComponent(gradeEntityId)}',
+    );
+  }
+
   Future<http.Response> _request(
     Future<http.Response> Function() request,
   ) async {
@@ -134,6 +191,10 @@ class HttpGradeApi implements GradeApi {
       'INVALID_GRADE' || 'INVALID_REQUEST' => const GradeApiFailure(
         GradeApiFailureKind.validation,
         '입력한 성적 정보를 확인해 주세요.',
+      ),
+      'GRADE_NOT_FOUND' => const GradeApiFailure(
+        GradeApiFailureKind.notFound,
+        '성적 정보를 찾을 수 없어요. 목록을 새로고침해 주세요.',
       ),
       _ => GradeApiFailure(GradeApiFailureKind.recoverable, fallbackMessage),
     };

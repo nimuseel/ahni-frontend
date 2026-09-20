@@ -1,5 +1,6 @@
 import 'package:ahni_mobile/core/auth/auth_gateway.dart';
 import 'package:ahni_mobile/features/grade/application/course_catalog_controller.dart';
+import 'package:ahni_mobile/features/grade/application/grade_edit_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_registration_controller.dart';
 import 'package:ahni_mobile/features/grade/data/grade_api.dart';
@@ -97,6 +98,39 @@ void main() {
     expect(api.calls, 2);
   });
 
+  testWidgets('deletes a selected grade and refreshes the list', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway(currentSession: testSession);
+    final api = FakeGradeApi()..results = [testGrade];
+    api.deleteHandler = (_, _) async => api.results = const [];
+
+    await tester.pumpWidget(
+      _testApp(
+        GradeListController(auth: auth, api: api),
+        editController: GradeEditController(auth: auth, api: api),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('grade-row-grade-id-1')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('grade-edit-page')), findsOneWidget);
+
+    final delete = find.byKey(const Key('delete-grade'));
+    await tester.ensureVisible(delete);
+    await tester.pumpAndSettle();
+    await tester.tap(delete);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirm-delete-grade')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('grade-edit-page')), findsNothing);
+    expect(findWhitespaceWrappedText('아직 등록된 성적이 없어요'), findsOneWidget);
+    expect(api.deleteCalls, 1);
+    expect(api.calls, 2);
+  });
+
   testWidgets('retries a recoverable grade-list failure', (tester) async {
     final api = FakeGradeApi()
       ..error = const GradeApiFailure(
@@ -183,6 +217,7 @@ Widget _testApp(
   VoidCallback? onAuthenticationRequired,
   CourseCatalogController? courseController,
   GradeRegistrationController? registrationController,
+  GradeEditController? editController,
 }) {
   return MaterialApp(
     theme: ThemeData(
@@ -197,6 +232,9 @@ Widget _testApp(
       courseController: courseController ?? buildTestCourseCatalogController(),
       registrationController:
           registrationController ?? buildTestGradeRegistrationController(),
+      editController:
+          editController ??
+          GradeEditController(auth: _authenticated(), api: FakeGradeApi()),
       onAuthenticationRequired: onAuthenticationRequired ?? () {},
     ),
   );

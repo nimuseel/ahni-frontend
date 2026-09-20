@@ -1,8 +1,10 @@
 import 'package:ahni_mobile/core/presentation/whitespace_wrapped_text.dart';
 import 'package:ahni_mobile/features/grade/application/course_catalog_controller.dart';
+import 'package:ahni_mobile/features/grade/application/grade_edit_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_registration_controller.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
+import 'package:ahni_mobile/features/grade/presentation/grade_edit_page.dart';
 import 'package:ahni_mobile/features/grade/presentation/grade_registration_page.dart';
 import 'package:flutter/material.dart';
 
@@ -11,6 +13,7 @@ class GradeListPage extends StatefulWidget {
     required this.controller,
     required this.courseController,
     required this.registrationController,
+    required this.editController,
     required this.onAuthenticationRequired,
     this.bottomNavigationBar,
     super.key,
@@ -19,6 +22,7 @@ class GradeListPage extends StatefulWidget {
   final GradeListController controller;
   final CourseCatalogController courseController;
   final GradeRegistrationController registrationController;
+  final GradeEditController editController;
   final VoidCallback onAuthenticationRequired;
   final Widget? bottomNavigationBar;
 
@@ -81,6 +85,29 @@ class _GradeListPageState extends State<GradeListPage> {
     );
   }
 
+  Future<void> _openEdit(GradeRecord grade) async {
+    widget.editController.reset();
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (editContext) => GradeEditPage(
+          grade: grade,
+          controller: widget.editController,
+          onSaved: (_) => _refreshAndClose(editContext),
+          onDeleted: () => _refreshAndClose(editContext),
+          onAuthenticationRequired: () {
+            if (editContext.mounted) Navigator.of(editContext).pop();
+            widget.onAuthenticationRequired();
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _refreshAndClose(BuildContext routeContext) async {
+    await widget.controller.retry();
+    if (routeContext.mounted) Navigator.of(routeContext).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -102,7 +129,10 @@ class _GradeListPageState extends State<GradeListPage> {
         top: false,
         child: switch (widget.controller.state) {
           GradeListInitial() || GradeListLoading() => const _LoadingView(),
-          GradeListReady state => _GradeList(grades: state.grades),
+          GradeListReady state => _GradeList(
+            grades: state.grades,
+            onGradeSelected: _openEdit,
+          ),
           GradeListEmpty() => _EmptyView(onRegister: _openRegistration),
           GradeListFailure state => _FailureView(
             message: state.message,
@@ -118,9 +148,10 @@ class _GradeListPageState extends State<GradeListPage> {
 }
 
 class _GradeList extends StatelessWidget {
-  const _GradeList({required this.grades});
+  const _GradeList({required this.grades, required this.onGradeSelected});
 
   final List<GradeRecord> grades;
+  final ValueChanged<GradeRecord> onGradeSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -144,7 +175,10 @@ class _GradeList extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               for (var index = 0; index < groups.length; index++) ...[
-                _GradeTermSection(group: groups[index]),
+                _GradeTermSection(
+                  group: groups[index],
+                  onGradeSelected: onGradeSelected,
+                ),
                 if (index != groups.length - 1) const SizedBox(height: 16),
               ],
             ],
@@ -156,9 +190,10 @@ class _GradeList extends StatelessWidget {
 }
 
 class _GradeTermSection extends StatelessWidget {
-  const _GradeTermSection({required this.group});
+  const _GradeTermSection({required this.group, required this.onGradeSelected});
 
   final _GradeGroup group;
+  final ValueChanged<GradeRecord> onGradeSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -166,32 +201,29 @@ class _GradeTermSection extends StatelessWidget {
     return Semantics(
       label: '$title 성적',
       container: true,
-      child: Container(
+      child: Material(
         key: Key('grade-term-${group.academicYear}-${group.term.apiName}'),
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).colorScheme.onSurface
-                  .withValues(alpha: 0.06),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 16),
-            for (var index = 0; index < group.grades.length; index++) ...[
-              _GradeRow(grade: group.grades[index]),
-              if (index != group.grades.length - 1) const Divider(height: 32),
+        color: Theme.of(context).colorScheme.surface,
+        elevation: 2,
+        shadowColor: Theme.of(context).colorScheme.onSurface
+            .withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 16),
+              for (var index = 0; index < group.grades.length; index++) ...[
+                _GradeRow(
+                  grade: group.grades[index],
+                  onTap: () => onGradeSelected(group.grades[index]),
+                ),
+                if (index != group.grades.length - 1) const Divider(height: 32),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -199,9 +231,10 @@ class _GradeTermSection extends StatelessWidget {
 }
 
 class _GradeRow extends StatelessWidget {
-  const _GradeRow({required this.grade});
+  const _GradeRow({required this.grade, required this.onTap});
 
   final GradeRecord grade;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -219,52 +252,65 @@ class _GradeRow extends StatelessWidget {
 
     return Semantics(
       label: semantics,
+      button: true,
       excludeSemantics: true,
-      child: Row(
+      child: InkWell(
         key: Key('grade-row-${grade.entityId}'),
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  grade.course.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  metadata,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                grade.gradeLabel,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w700,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      grade.course.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      metadata,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                 ),
               ),
-              if (grade.gradePoint case final point?) ...[
-                const SizedBox(height: 2),
-                Text(
-                  '${_formatNumber(point)}점',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
+              const SizedBox(width: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    grade.gradeLabel,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (grade.gradePoint case final point?) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '${_formatNumber(point)}점',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(width: 4),
+              const Padding(
+                padding: EdgeInsets.only(top: 2),
+                child: Icon(Icons.chevron_right_rounded, size: 20),
+              ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

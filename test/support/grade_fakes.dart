@@ -1,5 +1,6 @@
 import 'package:ahni_mobile/core/auth/auth_gateway.dart';
 import 'package:ahni_mobile/features/grade/application/course_catalog_controller.dart';
+import 'package:ahni_mobile/features/grade/application/grade_edit_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_registration_controller.dart';
 import 'package:ahni_mobile/features/grade/data/course_api.dart';
@@ -7,6 +8,7 @@ import 'package:ahni_mobile/features/grade/data/grade_api.dart';
 import 'package:ahni_mobile/features/grade/domain/course_catalog_item.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_registration.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
+import 'package:ahni_mobile/features/grade/domain/grade_update.dart';
 
 import 'onboarding_fakes.dart';
 
@@ -40,6 +42,16 @@ GradeRegistrationController buildTestGradeRegistrationController({
   );
 }
 
+GradeEditController buildTestGradeEditController({
+  AuthGateway? auth,
+  GradeApi? api,
+}) {
+  return GradeEditController(
+    auth: auth ?? FakeAuthGateway(currentSession: testSession),
+    api: api ?? FakeGradeApi(),
+  );
+}
+
 class FakeCourseApi implements CourseApi {
   List<CourseCatalogItem> results = const [];
   Object? error;
@@ -60,10 +72,22 @@ class FakeGradeApi implements GradeApi {
     GradeRegistration registration,
   )?
   registerHandler;
+  Future<GradeRecord> Function(
+    String accessToken,
+    String gradeEntityId,
+    GradeUpdate update,
+  )?
+  updateHandler;
+  Future<void> Function(String accessToken, String gradeEntityId)?
+  deleteHandler;
   String? lastAccessToken;
   GradeRegistration? lastRegistration;
+  GradeUpdate? lastUpdate;
+  String? lastGradeEntityId;
   int calls = 0;
   int registerCalls = 0;
+  int updateCalls = 0;
+  int deleteCalls = 0;
 
   @override
   Future<List<GradeRecord>> getGrades(String accessToken) async {
@@ -87,6 +111,34 @@ class FakeGradeApi implements GradeApi {
       return value(accessToken, registration);
     }
     return testGrade;
+  }
+
+  @override
+  Future<GradeRecord> updateGrade(
+    String accessToken,
+    String gradeEntityId,
+    GradeUpdate update,
+  ) async {
+    updateCalls++;
+    lastAccessToken = accessToken;
+    lastGradeEntityId = gradeEntityId;
+    lastUpdate = update;
+    if (error case final value?) throw value;
+    if (updateHandler case final value?) {
+      return value(accessToken, gradeEntityId, update);
+    }
+    return testGrade;
+  }
+
+  @override
+  Future<void> deleteGrade(String accessToken, String gradeEntityId) async {
+    deleteCalls++;
+    lastAccessToken = accessToken;
+    lastGradeEntityId = gradeEntityId;
+    if (error case final value?) throw value;
+    if (deleteHandler case final value?) {
+      await value(accessToken, gradeEntityId);
+    }
   }
 }
 

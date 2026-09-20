@@ -5,6 +5,7 @@ import 'package:ahni_mobile/features/grade/application/grade_list_controller.dar
 import 'package:ahni_mobile/features/grade/data/grade_api.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_registration.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
+import 'package:ahni_mobile/features/grade/domain/grade_update.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -140,6 +141,16 @@ class _FakeGradeApi implements GradeApi {
   ) async {
     return _testGrade;
   }
+
+  @override
+  Future<GradeRecord> updateGrade(
+    String accessToken,
+    String gradeEntityId,
+    GradeUpdate update,
+  ) async => _testGrade;
+
+  @override
+  Future<void> deleteGrade(String accessToken, String gradeEntityId) async {}
 }
 
 class _FakeAuthGateway implements AuthGateway {
