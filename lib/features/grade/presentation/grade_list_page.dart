@@ -4,6 +4,7 @@ import 'package:ahni_mobile/features/grade/application/grade_edit_controller.dar
 import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_registration_controller.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
+import 'package:ahni_mobile/features/grade/domain/grade_summary.dart';
 import 'package:ahni_mobile/features/grade/presentation/grade_edit_page.dart';
 import 'package:ahni_mobile/features/grade/presentation/grade_registration_page.dart';
 import 'package:flutter/material.dart';
@@ -68,6 +69,7 @@ class _GradeListPageState extends State<GradeListPage> {
         builder: (registrationContext) => GradeRegistrationPage(
           courseController: widget.courseController,
           registrationController: widget.registrationController,
+          availableGrades: _availableGrades,
           onRegistered: (_) async {
             await widget.controller.retry();
             if (registrationContext.mounted) {
@@ -91,6 +93,7 @@ class _GradeListPageState extends State<GradeListPage> {
       MaterialPageRoute(
         builder: (editContext) => GradeEditPage(
           grade: grade,
+          availableGrades: _availableGrades,
           controller: widget.editController,
           onSaved: (_) => _refreshAndClose(editContext),
           onDeleted: () => _refreshAndClose(editContext),
@@ -107,6 +110,11 @@ class _GradeListPageState extends State<GradeListPage> {
     await widget.controller.retry();
     if (routeContext.mounted) Navigator.of(routeContext).pop();
   }
+
+  List<GradeRecord> get _availableGrades => switch (widget.controller.state) {
+    GradeListReady state => state.grades,
+    _ => const [],
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -131,6 +139,7 @@ class _GradeListPageState extends State<GradeListPage> {
           GradeListInitial() || GradeListLoading() => const _LoadingView(),
           GradeListReady state => _GradeList(
             grades: state.grades,
+            summary: state.summary,
             onGradeSelected: _openEdit,
           ),
           GradeListEmpty() => _EmptyView(onRegister: _openRegistration),
@@ -148,9 +157,14 @@ class _GradeListPageState extends State<GradeListPage> {
 }
 
 class _GradeList extends StatelessWidget {
-  const _GradeList({required this.grades, required this.onGradeSelected});
+  const _GradeList({
+    required this.grades,
+    required this.summary,
+    required this.onGradeSelected,
+  });
 
   final List<GradeRecord> grades;
+  final GradeSummary summary;
   final ValueChanged<GradeRecord> onGradeSelected;
 
   @override
@@ -174,6 +188,8 @@ class _GradeList extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: 24),
+              _GradeSummaryCard(summary: summary),
+              const SizedBox(height: 24),
               for (var index = 0; index < groups.length; index++) ...[
                 _GradeTermSection(
                   group: groups[index],
@@ -184,6 +200,101 @@ class _GradeList extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _GradeSummaryCard extends StatelessWidget {
+  const _GradeSummaryCard({required this.summary});
+
+  final GradeSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Semantics(
+      container: true,
+      label:
+          '전체 평점 ${_formatGpa(summary.gpa)}, 이수 ${_formatNumber(summary.completedCredits)}학점, 평점 반영 ${_formatNumber(summary.gpaCredits)}학점',
+      child: Container(
+        key: const Key('grade-summary'),
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            WhitespaceWrappedText(
+              '전체 성적',
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(color: colorScheme.onPrimaryContainer),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _formatGpa(summary.gpa),
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: colorScheme.onPrimaryContainer,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 4),
+            WhitespaceWrappedText(
+              '평점 반영 ${_formatNumber(summary.gpaCredits)}학점 · 이수 ${_formatNumber(summary.completedCredits)}학점',
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: colorScheme.onPrimaryContainer),
+            ),
+            if (summary.categories.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Wrap(
+                spacing: 24,
+                runSpacing: 16,
+                children: [
+                  for (final category in summary.categories)
+                    _CategorySummary(summary: category),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CategorySummary extends StatelessWidget {
+  const _CategorySummary({required this.summary});
+
+  final GradeCategorySummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.onPrimaryContainer;
+    return SizedBox(
+      width: 124,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _categoryLabel(summary.category),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: color),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            _formatGpa(summary.gpa),
+            style: Theme.of(context).textTheme.titleMedium
+                ?.copyWith(color: color, fontWeight: FontWeight.w700),
+          ),
+          Text(
+            '${_formatNumber(summary.completedCredits)}학점 이수',
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: color),
+          ),
+        ],
       ),
     );
   }
@@ -241,7 +352,7 @@ class _GradeRow extends StatelessWidget {
     final metadata = [
       grade.course.code,
       '${_formatNumber(grade.credit)}학점',
-      if (grade.retake) '재수강',
+      if (grade.isRetake) '재수강',
     ].join(' · ');
     final semantics = [
       grade.course.name,
@@ -494,3 +605,11 @@ String _formatNumber(double value) {
       ? value.toInt().toString()
       : value.toString();
 }
+
+String _formatGpa(double value) => value.toStringAsFixed(2);
+
+String _categoryLabel(CourseCategory category) => switch (category) {
+  CourseCategory.major => '전공',
+  CourseCategory.generalEducation => '교양',
+  CourseCategory.elective => '일반선택',
+};

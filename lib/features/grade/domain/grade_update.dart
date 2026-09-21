@@ -7,7 +7,7 @@ class GradeUpdate {
     required this.gradeCode,
     required this.credit,
     required this.rpl,
-    required this.retake,
+    required this.replacedGradeEntityId,
   });
 
   final int academicYear;
@@ -15,7 +15,7 @@ class GradeUpdate {
   final GradeCode? gradeCode;
   final double credit;
   final bool rpl;
-  final bool retake;
+  final String? replacedGradeEntityId;
 
   Map<String, Object?> toJson() {
     return {
@@ -24,7 +24,7 @@ class GradeUpdate {
       'gradeCode': gradeCode?.apiName,
       'credit': credit,
       'rpl': rpl,
-      'retake': retake,
+      'replacedGradeEntityId': replacedGradeEntityId,
     };
   }
 }

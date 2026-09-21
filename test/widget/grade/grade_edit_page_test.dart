@@ -30,12 +30,7 @@ void main() {
       isTrue,
     );
     expect(find.text('A+'), findsOneWidget);
-    expect(
-      tester
-          .widget<CheckboxListTile>(find.byKey(const Key('edit-retake')))
-          .value,
-      isTrue,
-    );
+    expect(find.text('2024년 1학기 · B0'), findsOneWidget);
   });
 
   testWidgets('saves changed values and returns the updated grade', (
@@ -53,7 +48,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('B+').last);
     await tester.enterText(find.byKey(const Key('edit-credit')), '2');
-    await _tapVisible(tester, 'edit-retake');
+    await _tapVisible(tester, 'edit-replacement-grade');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('선택 안 함').last);
     await _tapVisible(tester, 'save-grade');
     await tester.pumpAndSettle();
 
@@ -62,7 +59,7 @@ void main() {
     expect(api.lastUpdate?.term, AcademicTerm.winter);
     expect(api.lastUpdate?.gradeCode, GradeCode.bPlus);
     expect(api.lastUpdate?.credit, 2);
-    expect(api.lastUpdate?.retake, isFalse);
+    expect(api.lastUpdate?.replacedGradeEntityId, isNull);
     expect(savedGrade, testGrade);
   });
 
@@ -145,6 +142,7 @@ Widget _testApp({
     ),
     home: GradeEditPage(
       grade: testGrade,
+      availableGrades: [testGrade, _previousGrade],
       controller: GradeEditController(
         auth: FakeAuthGateway(currentSession: testSession),
         api: resolvedApi,
@@ -155,6 +153,20 @@ Widget _testApp({
     ),
   );
 }
+
+final _previousGrade = GradeRecord(
+  entityId: 'grade-id-0',
+  course: testGrade.course,
+  academicYear: 2024,
+  term: AcademicTerm.first,
+  gradeCode: GradeCode.bZero,
+  gradePoint: 3,
+  credit: 3,
+  rpl: false,
+  replacedGradeEntityId: null,
+  createdAt: DateTime.utc(2025),
+  updatedAt: DateTime.utc(2025),
+);
 
 Future<void> _tapVisible(WidgetTester tester, String key) async {
   final finder = find.byKey(Key(key));

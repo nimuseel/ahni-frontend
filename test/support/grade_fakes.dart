@@ -8,6 +8,7 @@ import 'package:ahni_mobile/features/grade/data/grade_api.dart';
 import 'package:ahni_mobile/features/grade/domain/course_catalog_item.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_registration.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
+import 'package:ahni_mobile/features/grade/domain/grade_summary.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_update.dart';
 
 import 'onboarding_fakes.dart';
@@ -15,10 +16,13 @@ import 'onboarding_fakes.dart';
 GradeListController buildTestGradeListController({
   AuthGateway? auth,
   List<GradeRecord> grades = const [],
+  GradeSummary summary = testGradeSummary,
 }) {
   return GradeListController(
     auth: auth ?? FakeAuthGateway(currentSession: testSession),
-    api: FakeGradeApi()..results = grades,
+    api: FakeGradeApi()
+      ..results = grades
+      ..summary = summary,
   );
 }
 
@@ -65,8 +69,10 @@ class FakeCourseApi implements CourseApi {
 
 class FakeGradeApi implements GradeApi {
   List<GradeRecord> results = const [];
+  GradeSummary summary = testGradeSummary;
   Object? error;
   Future<List<GradeRecord>> Function(String accessToken)? handler;
+  Future<GradeSummary> Function(String accessToken)? summaryHandler;
   Future<GradeRecord> Function(
     String accessToken,
     GradeRegistration registration,
@@ -85,6 +91,7 @@ class FakeGradeApi implements GradeApi {
   GradeUpdate? lastUpdate;
   String? lastGradeEntityId;
   int calls = 0;
+  int summaryCalls = 0;
   int registerCalls = 0;
   int updateCalls = 0;
   int deleteCalls = 0;
@@ -96,6 +103,15 @@ class FakeGradeApi implements GradeApi {
     if (error case final value?) throw value;
     if (handler case final value?) return value(accessToken);
     return results;
+  }
+
+  @override
+  Future<GradeSummary> getSummary(String accessToken) async {
+    summaryCalls++;
+    lastAccessToken = accessToken;
+    if (error case final value?) throw value;
+    if (summaryHandler case final value?) return value(accessToken);
+    return summary;
   }
 
   @override
@@ -157,7 +173,7 @@ final testGrade = GradeRecord(
   gradePoint: 4.5,
   credit: 3,
   rpl: false,
-  retake: true,
+  replacedGradeEntityId: 'grade-id-0',
   createdAt: DateTime.utc(2026, 9, 15),
   updatedAt: DateTime.utc(2026, 9, 15),
 );
@@ -185,7 +201,7 @@ final testPassGrade = GradeRecord(
   gradePoint: null,
   credit: 2,
   rpl: false,
-  retake: false,
+  replacedGradeEntityId: null,
   createdAt: DateTime.utc(2026, 9, 14),
   updatedAt: DateTime.utc(2026, 9, 14),
 );
@@ -204,7 +220,33 @@ final testRplGrade = GradeRecord(
   gradePoint: null,
   credit: 1,
   rpl: true,
-  retake: false,
+  replacedGradeEntityId: null,
   createdAt: DateTime.utc(2026, 3, 1),
   updatedAt: DateTime.utc(2026, 3, 1),
+);
+
+const testGradeSummary = GradeSummary(
+  gpa: 3.83,
+  completedCredits: 42,
+  gpaCredits: 36,
+  categories: [
+    GradeCategorySummary(
+      category: CourseCategory.major,
+      gpa: 4.02,
+      completedCredits: 24,
+      gpaCredits: 21,
+    ),
+    GradeCategorySummary(
+      category: CourseCategory.generalEducation,
+      gpa: 3.5,
+      completedCredits: 12,
+      gpaCredits: 9,
+    ),
+    GradeCategorySummary(
+      category: CourseCategory.elective,
+      gpa: 3,
+      completedCredits: 6,
+      gpaCredits: 6,
+    ),
+  ],
 );

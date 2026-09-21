@@ -3,6 +3,7 @@
 import 'package:ahni_mobile/core/auth/auth_gateway.dart';
 import 'package:ahni_mobile/features/grade/data/grade_api.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
+import 'package:ahni_mobile/features/grade/domain/grade_summary.dart';
 import 'package:flutter/foundation.dart';
 
 sealed class GradeListState {
@@ -18,9 +19,10 @@ class GradeListLoading extends GradeListState {
 }
 
 class GradeListReady extends GradeListState {
-  const GradeListReady(this.grades);
+  const GradeListReady({required this.grades, required this.summary});
 
   final List<GradeRecord> grades;
+  final GradeSummary summary;
 }
 
 class GradeListEmpty extends GradeListState {
@@ -62,12 +64,20 @@ class GradeListController extends ChangeNotifier {
     final requestGeneration = _generation;
     _setState(const GradeListLoading());
     try {
-      final grades = await _api.getGrades(session.accessToken);
+      final results = await Future.wait<Object>([
+        _api.getGrades(session.accessToken),
+        _api.getSummary(session.accessToken),
+      ]);
+      final grades = results[0] as List<GradeRecord>;
+      final summary = results[1] as GradeSummary;
       if (requestGeneration != _generation) return;
       _setState(
         grades.isEmpty
             ? const GradeListEmpty()
-            : GradeListReady(List.unmodifiable(grades)),
+            : GradeListReady(
+                grades: List.unmodifiable(grades),
+                summary: summary,
+              ),
       );
     } on GradeApiFailure catch (failure) {
       if (requestGeneration != _generation) return;

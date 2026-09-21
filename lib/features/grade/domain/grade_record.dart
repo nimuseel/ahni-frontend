@@ -113,7 +113,7 @@ class GradeRecord {
     required this.gradePoint,
     required this.credit,
     required this.rpl,
-    required this.retake,
+    required this.replacedGradeEntityId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -132,7 +132,7 @@ class GradeRecord {
       gradePoint: gradePoint == null ? null : (gradePoint as num).toDouble(),
       credit: (json['credit']! as num).toDouble(),
       rpl: json['rpl']! as bool,
-      retake: json['retake']! as bool,
+      replacedGradeEntityId: json['replacedGradeEntityId'] as String?,
       createdAt: DateTime.parse(json['createdAt']! as String),
       updatedAt: DateTime.parse(json['updatedAt']! as String),
     );
@@ -146,9 +146,11 @@ class GradeRecord {
   final double? gradePoint;
   final double credit;
   final bool rpl;
-  final bool retake;
+  final String? replacedGradeEntityId;
   final DateTime createdAt;
   final DateTime updatedAt;
 
   String get gradeLabel => rpl ? 'RPL' : gradeCode?.label ?? '미입력';
+
+  bool get isRetake => replacedGradeEntityId != null;
 }

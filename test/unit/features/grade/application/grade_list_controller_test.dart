@@ -5,6 +5,7 @@ import 'package:ahni_mobile/features/grade/application/grade_list_controller.dar
 import 'package:ahni_mobile/features/grade/data/grade_api.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_registration.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
+import 'package:ahni_mobile/features/grade/domain/grade_summary.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_update.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -21,9 +22,9 @@ void main() {
     expect(api.lastAccessToken, 'test-jwt');
     expect(
       controller.state,
-      isA<GradeListReady>().having((state) => state.grades, 'grades', [
-        _testGrade,
-      ]),
+      isA<GradeListReady>()
+          .having((state) => state.grades, 'grades', [_testGrade])
+          .having((state) => state.summary, 'summary', _testSummary),
     );
   });
 
@@ -122,6 +123,7 @@ class _FakeGradeApi implements GradeApi {
   List<GradeRecord> results = const [];
   Object? error;
   Future<List<GradeRecord>> Function(String accessToken)? handler;
+  GradeSummary summary = _testSummary;
   String? lastAccessToken;
   int calls = 0;
 
@@ -132,6 +134,12 @@ class _FakeGradeApi implements GradeApi {
     if (error case final value?) throw value;
     if (handler case final value?) return value(accessToken);
     return results;
+  }
+
+  @override
+  Future<GradeSummary> getSummary(String accessToken) async {
+    if (error case final value?) throw value;
+    return summary;
   }
 
   @override
@@ -207,7 +215,21 @@ final _testGrade = GradeRecord(
   gradePoint: 4.5,
   credit: 3,
   rpl: false,
-  retake: false,
+  replacedGradeEntityId: null,
   createdAt: DateTime.utc(2026, 9, 15),
   updatedAt: DateTime.utc(2026, 9, 15),
+);
+
+const _testSummary = GradeSummary(
+  gpa: 4.5,
+  completedCredits: 3,
+  gpaCredits: 3,
+  categories: [
+    GradeCategorySummary(
+      category: CourseCategory.major,
+      gpa: 4.5,
+      completedCredits: 3,
+      gpaCredits: 3,
+    ),
+  ],
 );
