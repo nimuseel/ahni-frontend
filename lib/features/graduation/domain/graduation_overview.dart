@@ -34,6 +34,8 @@ class GraduationOverview {
     required this.total,
     required this.department,
     required this.general,
+    required this.requiredCourses,
+    required this.requirementsMet,
   });
   factory GraduationOverview.fromJson(
     Map<String, Object?> requirement,
@@ -52,6 +54,35 @@ class GraduationOverview {
       throw const FormatException('Unknown major type');
     }
     final credits = progress['credits']! as Map<String, Object?>;
+    final assignments = requirement['requiredCourses']! as List<Object?>;
+    final completions = progress['requiredCourses']! as List<Object?>;
+    final byId = <String, Map<String, Object?>>{};
+    for (final entry in completions) {
+      final row = entry! as Map<String, Object?>;
+      final id = row['entityId']! as String;
+      if (byId.containsKey(id)) {
+        throw const FormatException('Duplicate required course');
+      }
+      byId[id] = row;
+    }
+    if (assignments.length != completions.length) {
+      throw const FormatException('Incomplete required courses');
+    }
+    final courses = assignments
+        .map((entry) {
+          final row = entry! as Map<String, Object?>;
+          final matched = byId.remove(row['entityId']);
+          if (matched == null || matched['category'] != row['category']) {
+            throw const FormatException('Mismatched required course');
+          }
+          final course = row['course']! as Map<String, Object?>;
+          final progressCourse = matched['course']! as Map<String, Object?>;
+          if (course['entityId'] != progressCourse['entityId']) {
+            throw const FormatException('Mismatched course identity');
+          }
+          return RequiredCourseCompletion.fromJson(matched);
+        })
+        .toList(growable: false);
     return GraduationOverview(
       entityId: requirement['entityId']! as String,
       departmentName: owner['name']! as String,
@@ -59,6 +90,8 @@ class GraduationOverview {
       admissionYear: requirement['admissionYear']! as int,
       sourceTitle: requirement['sourceTitle']! as String,
       sourceUrl: requirement['sourceUrl'] as String?,
+      requiredCourses: List.unmodifiable(courses),
+      requirementsMet: progress['requirementsMet']! as bool,
       total: CreditProgress.fromJson(credits['total']! as Map<String, Object?>),
       department: CreditProgress.fromJson(
         credits['department']! as Map<String, Object?>,
@@ -77,10 +110,50 @@ class GraduationOverview {
   final CreditProgress total;
   final CreditProgress department;
   final CreditProgress general;
+  final List<RequiredCourseCompletion> requiredCourses;
+  final bool requirementsMet;
   bool get creditsMet => total.met && department.met && general.met;
   String get majorLabel => switch (majorType) {
     'PRIMARY' => '주전공',
     'DOUBLE_MAJOR' => '복수전공',
     _ => '부전공',
+  };
+}
+
+class RequiredCourseCompletion {
+  const RequiredCourseCompletion({
+    required this.entityId,
+    required this.category,
+    required this.courseName,
+    required this.courseCode,
+    required this.completed,
+  });
+  factory RequiredCourseCompletion.fromJson(Map<String, Object?> json) {
+    final category = json['category']! as String;
+    if (!{
+      'MAJOR_FOUNDATION',
+      'MAJOR_REQUIRED',
+      'GENERAL_REQUIRED',
+    }.contains(category)) {
+      throw const FormatException('Unknown required course category');
+    }
+    final course = json['course']! as Map<String, Object?>;
+    return RequiredCourseCompletion(
+      entityId: json['entityId']! as String,
+      category: category,
+      courseName: course['name']! as String,
+      courseCode: course['code']! as String,
+      completed: json['completed']! as bool,
+    );
+  }
+  final String entityId;
+  final String category;
+  final String courseName;
+  final String courseCode;
+  final bool completed;
+  String get categoryLabel => switch (category) {
+    'MAJOR_FOUNDATION' => '전공 기초',
+    'MAJOR_REQUIRED' => '전공 필수',
+    _ => '교양 필수',
   };
 }

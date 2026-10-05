@@ -10,6 +10,69 @@ import '../support/onboarding_fakes.dart';
 import '../unit/graduation/graduation_test.dart' show policy, progress;
 
 void main() {
+  testWidgets(
+    'completion and category filters show only matching required courses',
+    (tester) async {
+      final controller = GraduationController(
+        auth: FakeAuthGateway(currentSession: testSession),
+        api: FakeGraduationApi()
+          ..results = [GraduationOverview.fromJson(policy(), progress())],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: GraduationPage(
+            controller: controller,
+            onAuthenticationRequired: () {},
+            bottomNavigationBar: const SizedBox.shrink(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('미이수').hitTestable(), 150);
+      await tester.tap(find.text('미이수'));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '미이수'))
+            .selected,
+        isTrue,
+      );
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is WhitespaceWrappedText && widget.data == '프로그래밍',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('이수'));
+      await tester.pumpAndSettle();
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is WhitespaceWrappedText && widget.data == '프로그래밍',
+        ),
+        findsNothing,
+      );
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is WhitespaceWrappedText &&
+              widget.data.startsWith('선택한 조건'),
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('전체'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('분류 전체'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('교양 필수').last);
+      await tester.pumpAndSettle();
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is WhitespaceWrappedText && widget.data == '프로그래밍',
+        ),
+        findsNothing,
+      );
+    },
+  );
   testWidgets('shows progress and sources at narrow width with large text', (
     tester,
   ) async {

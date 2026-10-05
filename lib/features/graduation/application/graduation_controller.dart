@@ -25,6 +25,8 @@ class GraduationController extends ChangeNotifier {
     if (_disposed || status == GraduationStatus.loading) return;
     final session = auth.currentSession;
     if (session == null) {
+      overview = const [];
+      message = null;
       status = GraduationStatus.unauthorized;
       notifyListeners();
       return;

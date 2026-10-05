@@ -27,6 +27,12 @@ void main() {
 
     final components = contract['components']! as Map<String, Object?>;
     final schemas = components['schemas']! as Map<String, Object?>;
+    final graduation =
+        schemas['GraduationProgressResponse']! as Map<String, Object?>;
+    final graduationProperties =
+        graduation['properties']! as Map<String, Object?>;
+    expect(graduationProperties, contains('requiredCourses'));
+    expect(graduationProperties, contains('requirementsMet'));
     final registration =
         schemas['StudentProfileRegistrationRequest']! as Map<String, Object?>;
     final registrationProperties =

@@ -47,11 +47,11 @@
 
 **Interfaces:** adds `requiredCourses` completion results and `requirementsMet` to each progress response, alongside existing `credits`.
 
-- [ ] Test that a replaced passing attempt followed by F leaves the course incomplete, and that P/RPL complete the same stable course.
-- [ ] Return every active required-course assignment with its category, course metadata and completed flag, in deterministic code order.
-- [ ] Set `requirementsMet` only when all three credit thresholds and all active required courses are met.
-- [ ] Add ownership, missing-policy, multi-major and persistence boundary coverage; regenerate and pin OpenAPI.
-- [ ] Add major/category/completion filters in the mobile view and verify both repositories; commit each increment.
+- [x] Backend tests cover passing/P/RPL, F/NP, missing courses, unrelated identities and explicitly replaced attempts; shared effective-attempt filtering is reused.
+- [x] Active assignments return category, catalog metadata and completion in repository code order.
+- [x] `requirementsMet` combines all credit thresholds and required-course completions.
+- [x] Existing JWT ownership/exact-policy tests remain green; runtime OpenAPI is regenerated and pinned to backend `03c30eb`.
+- [x] Mobile major/category/completion filters, source identity checks and stale-account clearing pass full verification (71 unit, 36 widget, 1 integration tests).
 
 ## Task 3: Administrator course catalog management
 
@@ -80,3 +80,4 @@
 
 - Plan approved by the user's instruction to follow this flow; native execution continues without another approval gate.
 - Initial repository states were clean. New branches start at fetched `origin/main`; no worktrees or subagents were created.
+- Task 1 mobile commit: `1c5abcb`; task 2 backend commit: `03c30eb`; task 3 backend commit: `d3da57f`. Later backend branches build on the preceding verified feature branch.

@@ -18,12 +18,28 @@ Map<String, Object?> policy() => {
   'department': {'entityId': 'dept', 'name': '소프트웨어융합공학과'},
   'sourceTitle': '학과 안내',
   'sourceUrl': null,
+  'requiredCourses': [
+    {
+      'entityId': 'assignment',
+      'category': 'MAJOR_REQUIRED',
+      'course': {'entityId': 'course', 'code': 'CSE101', 'name': '프로그래밍'},
+    },
+  ],
 };
 Map<String, Object?> progress() => {
   'requirementEntityId': 'policy',
   'admissionYear': 2024,
   'majorType': 'PRIMARY',
   'department': {'entityId': 'dept', 'name': '소프트웨어융합공학과'},
+  'requirementsMet': false,
+  'requiredCourses': [
+    {
+      'entityId': 'assignment',
+      'category': 'MAJOR_REQUIRED',
+      'course': {'entityId': 'course', 'code': 'CSE101', 'name': '프로그래밍'},
+      'completed': false,
+    },
+  ],
   'credits': {
     for (final key in ['total', 'department', 'general'])
       key: {'required': 30, 'completed': 3, 'remaining': 27, 'met': false},
@@ -57,6 +73,8 @@ void main() {
       expect(result.single.total.remaining, 27);
       expect(result.single.creditsMet, isFalse);
       expect(result.single.sourceTitle, '학과 안내');
+      expect(result.single.requiredCourses.single.completed, isFalse);
+      expect(result.single.requirementsMet, isFalse);
     },
   );
   test('mismatched major and invalid credits are rejected', () {
