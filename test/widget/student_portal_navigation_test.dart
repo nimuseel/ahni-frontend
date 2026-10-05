@@ -27,6 +27,7 @@ void main() {
         environment: AppEnvironment.development,
         controller: onboardingController,
         gradeController: gradeController,
+        graduationController: buildTestGraduationController(),
         courseController: buildTestCourseCatalogController(),
         gradeRegistrationController: buildTestGradeRegistrationController(),
         gradeEditController: buildTestGradeEditController(),
@@ -42,6 +43,11 @@ void main() {
 
     expect(find.byKey(const Key('grade-list-page')), findsOneWidget);
     expect(find.text('프로그래밍 기초'), findsOneWidget);
+
+    await tester.tap(find.text('졸업'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('graduation-progress-page')), findsOneWidget);
 
     await tester.tap(find.text('내 정보'));
     await tester.pumpAndSettle();
@@ -67,6 +73,7 @@ void main() {
         environment: AppEnvironment.development,
         controller: onboardingController,
         gradeController: gradeController,
+        graduationController: buildTestGraduationController(),
         courseController: buildTestCourseCatalogController(),
         gradeRegistrationController: buildTestGradeRegistrationController(),
         gradeEditController: buildTestGradeEditController(),

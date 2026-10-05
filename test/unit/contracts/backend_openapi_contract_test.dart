@@ -21,6 +21,8 @@ void main() {
     expect(paths, contains('/api/v1/departments'));
     expect(paths, contains('/api/v1/grades'));
     expect(paths, contains('/api/v1/grades/summary'));
+    expect(paths, contains('/api/v1/graduation-requirements'));
+    expect(paths, contains('/api/v1/graduation-progress'));
     expect(paths, contains('/api/v1/grades/{gradeEntityId}'));
 
     final components = contract['components']! as Map<String, Object?>;

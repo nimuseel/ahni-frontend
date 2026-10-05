@@ -12,6 +12,7 @@ import 'package:ahni_mobile/features/grade/domain/grade_summary.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_update.dart';
 
 import 'onboarding_fakes.dart';
+export 'graduation_fakes.dart';
 
 GradeListController buildTestGradeListController({
   AuthGateway? auth,
