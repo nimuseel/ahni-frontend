@@ -59,11 +59,11 @@
 
 **Interfaces:** administrator list/create/update/deactivation APIs under `/api/v1/admin/courses`; student `/courses` stays active-only.
 
-- [ ] Test code normalization and duplicate conflicts, authorization, category/department validation and historical credit preservation.
-- [ ] Add active/inactive listing, creation, editing and explicit deactivation, keeping stable IDs and referenced records.
-- [ ] Reject edits that invalidate active required-course assignments.
-- [ ] Build admin list/edit/deactivate workflows with confirmation and accessible loading/error/retry states.
-- [ ] Verify backend and admin, regenerate/pin contracts and commit each verified increment.
+- [x] Test code normalization and duplicate conflicts, authorization, category/department validation and historical credit preservation.
+- [x] Add active/inactive listing, creation, editing and explicit deactivation, keeping stable IDs and referenced records.
+- [x] Reject edits that invalidate active required-course assignments.
+- [x] Build admin list/edit/deactivate workflows with confirmation and accessible loading/error/retry states.
+- [x] Verify backend and admin, regenerate/pin contracts and commit each verified increment (`d3da57f`, `ad4f010`).
 
 ## Task 4: Graduation-policy change impact
 
@@ -71,13 +71,20 @@
 
 **Interfaces:** read-only impact response with the count of non-deleted student profiles matching the policy's department, admission year and major type.
 
-- [ ] Test exact matching, excluded deleted majors/profiles and administrator authorization.
-- [ ] Show impact count and replacement warning before saving; cancel without changing policy or sending a mutation.
-- [ ] Document source-based course and policy entry, including full required-course assignment replacement.
-- [ ] Verify backend/admin and commit. Source documents and real production data remain operator inputs.
+- [x] Test exact matching, excluded deleted majors/profiles and administrator authorization.
+- [x] Show impact count and replacement warning before saving; cancel without changing policy or sending a mutation. Lookup failures preserve entered values and block saving.
+- [x] Document source-based course and policy entry, including full required-course assignment replacement, in admin `docs/operations/academic-data.md`.
+- [x] Verify backend/admin and commit (`e034c44`, `47f775f`). Source documents and real production data remain operator inputs.
+- [x] Preserve existing inactive required-course assignments during policy replacement while rejecting new inactive assignments; verify the browser edit flow with no selectable active courses.
 
 ## Execution record
 
 - Plan approved by the user's instruction to follow this flow; native execution continues without another approval gate.
 - Initial repository states were clean. New branches start at fetched `origin/main`; no worktrees or subagents were created.
 - Task 1 mobile commit: `1c5abcb`; task 2 backend commit: `03c30eb`; task 3 backend commit: `d3da57f`. Later backend branches build on the preceding verified feature branch.
+- Task 2 mobile commit: `3482bb5`; task 3 admin commit: `ad4f010`; task 4 backend/admin commits: `e034c44` / `47f775f`.
+- Final backend `./scripts/verify`: 170 unit/check tests and 148 integration tests, no failures or skipped tests. Admin `./scripts/verify`: 6 unit, 20 feature/component and 4 Chromium tests; lint, dependency boundaries, typecheck and production build passed.
+- Admin contract exactly matches backend `e034c442b095a3923080099edfc6d14947b93884`, SHA-256 `6ba2b3a4a588b4d6e27a5a1c5fbe8e8158a7c831f29cfbb912ee6b41416e79ff`. Mobile retains the compatible graduation contract from `03c30eb`; administrator-only additions do not alter its consumed endpoints.
+- Backend/admin current branch: `feat/graduation-policy-impact`, stacked on their verified course-management branches. Mobile implementation branch: `feat/graduation-progress`; its final execution record is on `docs/graduation-completion-record`, which includes both mobile feature commits.
+- Administrator browser workflows used intercepted test services; backend integration tests used isolated PostgreSQL. Desktop and 390px administrator screenshots were inspected. No production academic data was invented or inserted, and no simulator/device test was run. The user owns device verification.
+- All commits are local. No push, pull request, or merge was performed in this delivery.
