@@ -12,6 +12,8 @@ import 'package:ahni_mobile/features/onboarding/application/onboarding_controlle
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:ahni_mobile/features/graduation/application/graduation_controller.dart';
+import 'package:ahni_mobile/features/graduation/data/graduation_api.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -56,6 +58,10 @@ Future<void> main() async {
         api: HttpStudentApi(baseUri: apiBaseUri, client: httpClient),
       ),
       gradeController: GradeListController(auth: auth, api: gradeApi),
+      graduationController: GraduationController(
+        auth: auth,
+        api: HttpGraduationApi(baseUri: apiBaseUri, client: httpClient),
+      ),
       courseController: CourseCatalogController(
         auth: auth,
         api: HttpCourseApi(baseUri: apiBaseUri, client: httpClient),

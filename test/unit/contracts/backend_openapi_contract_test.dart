@@ -21,10 +21,18 @@ void main() {
     expect(paths, contains('/api/v1/departments'));
     expect(paths, contains('/api/v1/grades'));
     expect(paths, contains('/api/v1/grades/summary'));
+    expect(paths, contains('/api/v1/graduation-requirements'));
+    expect(paths, contains('/api/v1/graduation-progress'));
     expect(paths, contains('/api/v1/grades/{gradeEntityId}'));
 
     final components = contract['components']! as Map<String, Object?>;
     final schemas = components['schemas']! as Map<String, Object?>;
+    final graduation =
+        schemas['GraduationProgressResponse']! as Map<String, Object?>;
+    final graduationProperties =
+        graduation['properties']! as Map<String, Object?>;
+    expect(graduationProperties, contains('requiredCourses'));
+    expect(graduationProperties, contains('requirementsMet'));
     final registration =
         schemas['StudentProfileRegistrationRequest']! as Map<String, Object?>;
     final registrationProperties =

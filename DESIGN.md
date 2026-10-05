@@ -107,7 +107,7 @@ Only status semantics may add colors beyond this set in future feature branches.
 ### Bottom navigation
 
 - Show bottom navigation only after an authenticated student profile is ready.
-- The first two real destinations are `성적` and `내 정보`; inactive or future destinations are not shown.
+- The real destinations are `성적`, `졸업`, and `내 정보`; inactive or future destinations are not shown. Graduation progress separates recorded credits from official school certification and displays its policy source.
 - Preserve a clear selected label and icon, and reset student-owned feature state when the authenticated student changes.
 
 ### Status message

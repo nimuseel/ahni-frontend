@@ -19,6 +19,7 @@ void main() {
         environment: AppEnvironment.development,
         controller: controller,
         gradeController: buildTestGradeListController(),
+        graduationController: buildTestGraduationController(),
         courseController: buildTestCourseCatalogController(),
         gradeRegistrationController: buildTestGradeRegistrationController(),
         gradeEditController: buildTestGradeEditController(),
