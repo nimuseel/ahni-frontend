@@ -31,6 +31,7 @@ void main() {
         courseController: buildTestCourseCatalogController(),
         gradeRegistrationController: buildTestGradeRegistrationController(),
         gradeEditController: buildTestGradeEditController(),
+        gradeSimulationController: buildTestGradeSimulationController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -42,6 +43,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('grade-list-page')), findsOneWidget);
+    expect(find.text('프로그래밍 기초'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('open-grade-simulation')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('grade-simulation-page')), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
     expect(find.text('프로그래밍 기초'), findsOneWidget);
 
     await tester.tap(find.text('졸업'));
@@ -77,6 +85,7 @@ void main() {
         courseController: buildTestCourseCatalogController(),
         gradeRegistrationController: buildTestGradeRegistrationController(),
         gradeEditController: buildTestGradeEditController(),
+        gradeSimulationController: buildTestGradeSimulationController(),
       ),
     );
     await tester.pumpAndSettle();

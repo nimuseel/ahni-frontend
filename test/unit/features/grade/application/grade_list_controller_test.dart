@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:ahni_mobile/core/auth/auth_gateway.dart';
 import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
 import 'package:ahni_mobile/features/grade/data/grade_api.dart';
+import 'package:ahni_mobile/features/grade/domain/grade_simulation.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_registration.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_summary.dart';
@@ -120,6 +121,14 @@ void main() {
 }
 
 class _FakeGradeApi implements GradeApi {
+  @override
+  Future<GradeSimulation> simulateGrades(
+    String accessToken,
+    List<ExpectedGrade> expectedGrades,
+  ) async {
+    throw StateError('Simulation is not used in the grade-list fixture');
+  }
+
   List<GradeRecord> results = const [];
   Object? error;
   Future<List<GradeRecord>> Function(String accessToken)? handler;

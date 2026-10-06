@@ -6,6 +6,7 @@ import 'package:ahni_mobile/features/grade/application/course_catalog_controller
 import 'package:ahni_mobile/features/grade/application/grade_edit_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_registration_controller.dart';
+import 'package:ahni_mobile/features/grade/application/grade_simulation_controller.dart';
 import 'package:ahni_mobile/features/grade/data/course_api.dart';
 import 'package:ahni_mobile/features/grade/data/grade_api.dart';
 import 'package:ahni_mobile/features/onboarding/application/onboarding_controller.dart';
@@ -58,6 +59,10 @@ Future<void> main() async {
         api: HttpStudentApi(baseUri: apiBaseUri, client: httpClient),
       ),
       gradeController: GradeListController(auth: auth, api: gradeApi),
+      gradeSimulationController: GradeSimulationController(
+        auth: auth,
+        api: gradeApi,
+      ),
       graduationController: GraduationController(
         auth: auth,
         api: HttpGraduationApi(baseUri: apiBaseUri, client: httpClient),

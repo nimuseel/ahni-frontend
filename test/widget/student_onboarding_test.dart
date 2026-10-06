@@ -37,6 +37,7 @@ void main() {
         courseController: buildTestCourseCatalogController(),
         gradeRegistrationController: buildTestGradeRegistrationController(),
         gradeEditController: buildTestGradeEditController(),
+        gradeSimulationController: buildTestGradeSimulationController(),
       ),
     );
     await tester.pump();
@@ -88,6 +89,7 @@ void main() {
         courseController: buildTestCourseCatalogController(),
         gradeRegistrationController: buildTestGradeRegistrationController(),
         gradeEditController: buildTestGradeEditController(),
+        gradeSimulationController: buildTestGradeSimulationController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -152,6 +154,7 @@ void main() {
         courseController: buildTestCourseCatalogController(),
         gradeRegistrationController: buildTestGradeRegistrationController(),
         gradeEditController: buildTestGradeEditController(),
+        gradeSimulationController: buildTestGradeSimulationController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -199,6 +202,7 @@ void main() {
         courseController: buildTestCourseCatalogController(),
         gradeRegistrationController: buildTestGradeRegistrationController(),
         gradeEditController: buildTestGradeEditController(),
+        gradeSimulationController: buildTestGradeSimulationController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -302,6 +306,7 @@ void main() {
         courseController: buildTestCourseCatalogController(),
         gradeRegistrationController: buildTestGradeRegistrationController(),
         gradeEditController: buildTestGradeEditController(),
+        gradeSimulationController: buildTestGradeSimulationController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -362,6 +367,7 @@ void main() {
         courseController: buildTestCourseCatalogController(),
         gradeRegistrationController: buildTestGradeRegistrationController(),
         gradeEditController: buildTestGradeEditController(),
+        gradeSimulationController: buildTestGradeSimulationController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -421,6 +427,7 @@ void main() {
           courseController: buildTestCourseCatalogController(),
           gradeRegistrationController: buildTestGradeRegistrationController(),
           gradeEditController: buildTestGradeEditController(),
+          gradeSimulationController: buildTestGradeSimulationController(),
         ),
       ),
     );
@@ -479,6 +486,7 @@ void main() {
         courseController: buildTestCourseCatalogController(),
         gradeRegistrationController: buildTestGradeRegistrationController(),
         gradeEditController: buildTestGradeEditController(),
+        gradeSimulationController: buildTestGradeSimulationController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -562,6 +570,7 @@ void main() {
         courseController: buildTestCourseCatalogController(),
         gradeRegistrationController: buildTestGradeRegistrationController(),
         gradeEditController: buildTestGradeEditController(),
+        gradeSimulationController: buildTestGradeSimulationController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -616,6 +625,7 @@ void main() {
           courseController: buildTestCourseCatalogController(),
           gradeRegistrationController: buildTestGradeRegistrationController(),
           gradeEditController: buildTestGradeEditController(),
+          gradeSimulationController: buildTestGradeSimulationController(),
         ),
       ),
     );
@@ -651,6 +661,7 @@ void main() {
           courseController: buildTestCourseCatalogController(),
           gradeRegistrationController: buildTestGradeRegistrationController(),
           gradeEditController: buildTestGradeEditController(),
+          gradeSimulationController: buildTestGradeSimulationController(),
         ),
       ),
     );

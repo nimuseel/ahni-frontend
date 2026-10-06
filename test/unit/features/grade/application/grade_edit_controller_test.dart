@@ -4,6 +4,7 @@ import 'package:ahni_mobile/features/grade/application/grade_edit_controller.dar
 import 'package:ahni_mobile/features/grade/data/grade_api.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_registration.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
+import 'package:ahni_mobile/features/grade/domain/grade_simulation.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_summary.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_update.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -107,6 +108,13 @@ class _FakeGradeApi implements GradeApi {
   GradeUpdate? lastUpdate;
   int updateCalls = 0;
   int deleteCalls = 0;
+
+  @override
+  Future<GradeSimulation> simulateGrades(
+    String accessToken,
+    List<ExpectedGrade> expectedGrades,
+  ) async =>
+      throw StateError('Simulation is not used in the grade-edit fixture');
 
   @override
   Future<List<GradeRecord>> getGrades(String accessToken) async => const [];

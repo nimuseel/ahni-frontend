@@ -3,15 +3,18 @@ import 'package:ahni_mobile/features/grade/application/course_catalog_controller
 import 'package:ahni_mobile/features/grade/application/grade_edit_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_registration_controller.dart';
+import 'package:ahni_mobile/features/grade/application/grade_simulation_controller.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_summary.dart';
 import 'package:ahni_mobile/features/grade/presentation/grade_edit_page.dart';
 import 'package:ahni_mobile/features/grade/presentation/grade_registration_page.dart';
+import 'package:ahni_mobile/features/grade/presentation/grade_simulation_page.dart';
 import 'package:flutter/material.dart';
 
 class GradeListPage extends StatefulWidget {
   const GradeListPage({
     required this.controller,
+    required this.simulationController,
     required this.courseController,
     required this.registrationController,
     required this.editController,
@@ -21,6 +24,7 @@ class GradeListPage extends StatefulWidget {
   });
 
   final GradeListController controller;
+  final GradeSimulationController simulationController;
   final CourseCatalogController courseController;
   final GradeRegistrationController registrationController;
   final GradeEditController editController;
@@ -60,6 +64,21 @@ class _GradeListPageState extends State<GradeListPage> {
 
   void _refresh() {
     if (mounted) setState(() {});
+  }
+
+  Future<void> _openSimulation() async {
+    widget.simulationController.reset();
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (routeContext) => GradeSimulationPage(
+          controller: widget.simulationController,
+          onAuthenticationRequired: () {
+            if (routeContext.mounted) Navigator.of(routeContext).pop();
+            widget.onAuthenticationRequired();
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _openRegistration() async {
@@ -124,6 +143,15 @@ class _GradeListPageState extends State<GradeListPage> {
         titleSpacing: 24,
         title: const Text('성적'),
         actions: [
+          IconButton(
+            key: const Key('open-grade-simulation'),
+            tooltip: '평점 시뮬레이션',
+            onPressed:
+                widget.controller.state is GradeListAuthenticationRequired
+                ? null
+                : _openSimulation,
+            icon: const Icon(Icons.calculate_outlined),
+          ),
           TextButton(
             key: const Key('open-grade-registration'),
             onPressed: _openRegistration,
