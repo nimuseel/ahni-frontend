@@ -232,6 +232,7 @@ Widget _testApp(
     ),
     home: GradeListPage(
       controller: controller,
+      simulationController: buildTestGradeSimulationController(),
       courseController: courseController ?? buildTestCourseCatalogController(),
       registrationController:
           registrationController ?? buildTestGradeRegistrationController(),

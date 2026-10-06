@@ -7,6 +7,7 @@ import 'package:ahni_mobile/features/grade/domain/grade_registration.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_summary.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_update.dart';
+import 'package:ahni_mobile/features/grade/domain/grade_simulation.dart';
 import 'package:http/http.dart' as http;
 
 enum GradeApiFailureKind {
@@ -29,6 +30,11 @@ abstract interface class GradeApi {
   Future<List<GradeRecord>> getGrades(String accessToken);
 
   Future<GradeSummary> getSummary(String accessToken);
+
+  Future<GradeSimulation> simulateGrades(
+    String accessToken,
+    List<ExpectedGrade> expectedGrades,
+  );
 
   Future<GradeRecord> registerGrade(
     String accessToken,
@@ -93,6 +99,50 @@ class HttpGradeApi implements GradeApi {
     }
     try {
       return GradeSummary.fromJson(_decodeMap(response));
+    } on FormatException catch (_) {
+      throw _malformedResponse;
+    } on TypeError catch (_) {
+      throw _malformedResponse;
+    }
+  }
+
+  @override
+  Future<GradeSimulation> simulateGrades(
+    String accessToken,
+    List<ExpectedGrade> expectedGrades,
+  ) async {
+    if (expectedGrades.isEmpty ||
+        expectedGrades.length > 50 ||
+        expectedGrades.any(
+          (grade) => ExpectedGrade.parseCredit(grade.credit.toString()) == null,
+        )) {
+      throw const GradeApiFailure(
+        GradeApiFailureKind.validation,
+        '예상 성적과 학점을 확인해 주세요.',
+      );
+    }
+    final response = await _request(
+      () => _client.post(
+        baseUri.resolve('/api/v1/grades/simulation'),
+        headers: {
+          'authorization': 'Bearer $accessToken',
+          'content-type': 'application/json',
+        },
+        body: jsonEncode({
+          'expectedGrades': expectedGrades
+              .map((grade) => grade.toJson())
+              .toList(),
+        }),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw _failure(
+        response,
+        fallbackMessage: '예상 평점을 계산하지 못했어요. 다시 시도해 주세요.',
+      );
+    }
+    try {
+      return GradeSimulation.fromJson(_decodeMap(response));
     } on FormatException catch (_) {
       throw _malformedResponse;
     } on TypeError catch (_) {

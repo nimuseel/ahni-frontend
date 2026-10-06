@@ -3,6 +3,7 @@ import 'package:ahni_mobile/features/grade/application/course_catalog_controller
 import 'package:ahni_mobile/features/grade/application/grade_edit_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_registration_controller.dart';
+import 'package:ahni_mobile/features/grade/application/grade_simulation_controller.dart';
 import 'package:ahni_mobile/features/onboarding/application/onboarding_controller.dart';
 import 'package:ahni_mobile/features/onboarding/presentation/onboarding_page.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +15,7 @@ class AhniApp extends StatelessWidget {
     required this.environment,
     required this.controller,
     required this.gradeController,
+    required this.gradeSimulationController,
     required this.graduationController,
     required this.courseController,
     required this.gradeRegistrationController,
@@ -24,6 +26,7 @@ class AhniApp extends StatelessWidget {
   final AppEnvironment environment;
   final OnboardingController controller;
   final GradeListController gradeController;
+  final GradeSimulationController gradeSimulationController;
   final GraduationController graduationController;
   final CourseCatalogController courseController;
   final GradeRegistrationController gradeRegistrationController;
@@ -142,6 +145,7 @@ class AhniApp extends StatelessWidget {
       home: OnboardingPage(
         controller: controller,
         gradeController: gradeController,
+        gradeSimulationController: gradeSimulationController,
         graduationController: graduationController,
         courseController: courseController,
         gradeRegistrationController: gradeRegistrationController,

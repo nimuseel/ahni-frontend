@@ -4,6 +4,7 @@ import 'package:ahni_mobile/features/grade/application/course_catalog_controller
 import 'package:ahni_mobile/features/grade/application/grade_edit_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_registration_controller.dart';
+import 'package:ahni_mobile/features/grade/application/grade_simulation_controller.dart';
 import 'package:ahni_mobile/features/grade/presentation/grade_list_page.dart';
 import 'package:ahni_mobile/features/onboarding/application/onboarding_controller.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +16,7 @@ class OnboardingPage extends StatefulWidget {
   const OnboardingPage({
     required this.controller,
     required this.gradeController,
+    required this.gradeSimulationController,
     required this.graduationController,
     required this.courseController,
     required this.gradeRegistrationController,
@@ -24,6 +26,7 @@ class OnboardingPage extends StatefulWidget {
 
   final OnboardingController controller;
   final GradeListController gradeController;
+  final GradeSimulationController gradeSimulationController;
   final GraduationController graduationController;
   final CourseCatalogController courseController;
   final GradeRegistrationController gradeRegistrationController;
@@ -61,6 +64,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     if (_portalStudentId != studentId) {
       _portalStudentId = studentId;
       widget.gradeController.reset();
+      widget.gradeSimulationController.reset();
       widget.graduationController.reset();
       widget.courseController.reset();
       widget.gradeRegistrationController.reset();
@@ -93,6 +97,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       ProfileReady state => _StudentPortalView(
         onboardingController: widget.controller,
         gradeController: widget.gradeController,
+        gradeSimulationController: widget.gradeSimulationController,
         graduationController: widget.graduationController,
         courseController: widget.courseController,
         gradeRegistrationController: widget.gradeRegistrationController,
@@ -711,6 +716,7 @@ class _StudentPortalView extends StatefulWidget {
   const _StudentPortalView({
     required this.onboardingController,
     required this.gradeController,
+    required this.gradeSimulationController,
     required this.graduationController,
     required this.courseController,
     required this.gradeRegistrationController,
@@ -720,6 +726,7 @@ class _StudentPortalView extends StatefulWidget {
 
   final OnboardingController onboardingController;
   final GradeListController gradeController;
+  final GradeSimulationController gradeSimulationController;
   final GraduationController graduationController;
   final CourseCatalogController courseController;
   final GradeRegistrationController gradeRegistrationController;
@@ -763,6 +770,7 @@ class _StudentPortalViewState extends State<_StudentPortalView> {
     if (_selectedIndex == 0) {
       return GradeListPage(
         controller: widget.gradeController,
+        simulationController: widget.gradeSimulationController,
         courseController: widget.courseController,
         registrationController: widget.gradeRegistrationController,
         editController: widget.gradeEditController,

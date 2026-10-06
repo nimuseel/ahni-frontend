@@ -3,6 +3,7 @@ import 'package:ahni_mobile/features/grade/application/course_catalog_controller
 import 'package:ahni_mobile/features/grade/application/grade_edit_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_registration_controller.dart';
+import 'package:ahni_mobile/features/grade/application/grade_simulation_controller.dart';
 import 'package:ahni_mobile/features/grade/data/course_api.dart';
 import 'package:ahni_mobile/features/grade/data/grade_api.dart';
 import 'package:ahni_mobile/features/grade/domain/course_catalog_item.dart';
@@ -10,9 +11,18 @@ import 'package:ahni_mobile/features/grade/domain/grade_registration.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_summary.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_update.dart';
+import 'package:ahni_mobile/features/grade/domain/grade_simulation.dart';
 
 import 'onboarding_fakes.dart';
 export 'graduation_fakes.dart';
+
+GradeSimulationController buildTestGradeSimulationController({
+  AuthGateway? auth,
+  GradeApi? api,
+}) => GradeSimulationController(
+  auth: auth ?? FakeAuthGateway(currentSession: testSession),
+  api: api ?? FakeGradeApi(),
+);
 
 GradeListController buildTestGradeListController({
   AuthGateway? auth,
@@ -69,6 +79,24 @@ class FakeCourseApi implements CourseApi {
 }
 
 class FakeGradeApi implements GradeApi {
+  Future<GradeSimulation> Function(String, List<ExpectedGrade>)?
+  simulationHandler;
+
+  @override
+  Future<GradeSimulation> simulateGrades(
+    String accessToken,
+    List<ExpectedGrade> expectedGrades,
+  ) async {
+    if (error case final value?) throw value;
+    if (simulationHandler case final value?) {
+      return value(accessToken, expectedGrades);
+    }
+    return const GradeSimulation(
+      current: testGradeSummary,
+      projected: testGradeSummary,
+    );
+  }
+
   List<GradeRecord> results = const [];
   GradeSummary summary = testGradeSummary;
   Object? error;

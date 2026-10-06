@@ -104,6 +104,13 @@ Only status semantics may add colors beyond this set in future feature branches.
 - Grade codes are right-aligned text with strong contrast. Do not calculate or display a GPA until the backend provides the policy result.
 - Loading appears directly on the canvas. Empty and recoverable-error states use concise guidance, and errors provide a 44-pixel retry action.
 
+### Grade simulation
+
+- Enter from the calculator action in the grade screen, including an empty grade history.
+- Use a single expected-course form surface with category, credit, and expected grade; separate courses with quiet dividers rather than nested cards.
+- Current and projected GPA share one accent-soft comparison surface; numbers use the 24-pixel display size and tabular figures. Large text wraps the two metrics instead of squeezing them into fixed columns.
+- Expected grades are temporary. Input changes clear stale results; request failures preserve inputs and offer recalculation. State explicitly that actual records are unchanged.
+
 ### Bottom navigation
 
 - Show bottom navigation only after an authenticated student profile is ready.
