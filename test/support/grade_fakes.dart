@@ -72,7 +72,10 @@ class FakeCourseApi implements CourseApi {
   Object? error;
 
   @override
-  Future<List<CourseCatalogItem>> getCourses(String accessToken) async {
+  Future<List<CourseCatalogItem>> getCourses(
+    String accessToken, {
+    required int academicYear,
+  }) async {
     if (error case final value?) throw value;
     return results;
   }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:ahni_mobile/features/grade/application/course_catalog_controller.dart';
 import 'package:ahni_mobile/features/grade/data/course_api.dart';
 import 'package:ahni_mobile/features/grade/domain/course_catalog_item.dart';
@@ -7,6 +9,53 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../../../support/onboarding_fakes.dart';
 
 void main() {
+  for (final failure in [false, true]) {
+    test(
+      'late previous-year response cannot replace the current year: failure=$failure',
+      () async {
+        final first = Completer<List<CourseCatalogItem>>();
+        final second = Completer<List<CourseCatalogItem>>();
+        final api = _FakeCourseApi()
+          ..handler = (year) => year == 2024 ? first.future : second.future;
+        final controller = CourseCatalogController(
+          auth: FakeAuthGateway(currentSession: testSession),
+          api: api,
+        );
+        final olderRequest = controller.load(academicYear: 2024);
+        final newerRequest = controller.load(academicYear: 2025);
+        second.complete([_courses.last]);
+        await newerRequest;
+        if (failure) {
+          first.completeError(
+            const CourseApiFailure(
+              CourseApiFailureKind.recoverable,
+              '이전 요청 실패',
+            ),
+          );
+        } else {
+          first.complete([_courses.first]);
+        }
+        await olderRequest;
+        expect((controller.state as CourseCatalogReady).courses, [
+          _courses.last,
+        ]);
+        expect(api.requestedYears, [2024, 2025]);
+      },
+    );
+  }
+
+  test('dispose invalidates a pending catalog response', () async {
+    final response = Completer<List<CourseCatalogItem>>();
+    final api = _FakeCourseApi()..handler = (_) => response.future;
+    final controller = CourseCatalogController(
+      auth: FakeAuthGateway(currentSession: testSession),
+      api: api,
+    );
+    final pending = controller.load(academicYear: 2024);
+    controller.dispose();
+    response.complete(_courses);
+    await pending;
+  });
   test('loads courses with the current authenticated session', () async {
     final api = _FakeCourseApi()..results = _courses;
     final controller = CourseCatalogController(
@@ -14,7 +63,7 @@ void main() {
       api: api,
     );
 
-    await controller.load();
+    await controller.load(academicYear: 2024);
 
     expect(api.lastAccessToken, 'test-jwt');
     expect(
@@ -33,7 +82,7 @@ void main() {
       api: _FakeCourseApi(),
     );
 
-    await controller.load();
+    await controller.load(academicYear: 2024);
 
     expect(controller.state, isA<CourseCatalogEmpty>());
   });
@@ -43,7 +92,7 @@ void main() {
       auth: FakeAuthGateway(currentSession: testSession),
       api: _FakeCourseApi()..results = _courses,
     );
-    await controller.load();
+    await controller.load(academicYear: 2024);
 
     controller.search(' cse ');
     expect(
@@ -73,7 +122,7 @@ void main() {
       auth: FakeAuthGateway(currentSession: testSession),
       api: _FakeCourseApi()..results = _courses,
     );
-    await controller.load();
+    await controller.load(academicYear: 2024);
 
     controller.search('없는 과목');
 
@@ -96,7 +145,7 @@ void main() {
       api: api,
     );
 
-    await controller.load();
+    await controller.load(academicYear: 2024);
     expect(controller.state, isA<CourseCatalogFailure>());
 
     api
@@ -114,7 +163,7 @@ void main() {
       api: api,
     );
 
-    await controller.load();
+    await controller.load(academicYear: 2024);
 
     expect(controller.state, isA<CourseCatalogAuthenticationRequired>());
     expect(api.calls, 0);
@@ -126,10 +175,17 @@ class _FakeCourseApi implements CourseApi {
   Object? error;
   String? lastAccessToken;
   int calls = 0;
+  final requestedYears = <int>[];
+  Future<List<CourseCatalogItem>> Function(int)? handler;
 
   @override
-  Future<List<CourseCatalogItem>> getCourses(String accessToken) async {
+  Future<List<CourseCatalogItem>> getCourses(
+    String accessToken, {
+    required int academicYear,
+  }) async {
     calls++;
+    requestedYears.add(academicYear);
+    if (handler case final value?) return value(academicYear);
     lastAccessToken = accessToken;
     if (error case final value?) throw value;
     return results;

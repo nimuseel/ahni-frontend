@@ -16,7 +16,10 @@ class CourseApiFailure implements Exception {
 }
 
 abstract interface class CourseApi {
-  Future<List<CourseCatalogItem>> getCourses(String accessToken);
+  Future<List<CourseCatalogItem>> getCourses(
+    String accessToken, {
+    required int academicYear,
+  });
 }
 
 class HttpCourseApi implements CourseApi {
@@ -27,10 +30,15 @@ class HttpCourseApi implements CourseApi {
   final http.Client _client;
 
   @override
-  Future<List<CourseCatalogItem>> getCourses(String accessToken) async {
+  Future<List<CourseCatalogItem>> getCourses(
+    String accessToken, {
+    required int academicYear,
+  }) async {
     final response = await _request(
       () => _client.get(
-        baseUri.resolve('/api/v1/courses'),
+        baseUri
+            .resolve('/api/v1/curriculum-courses')
+            .replace(queryParameters: {'academicYear': '$academicYear'}),
         headers: {'authorization': 'Bearer $accessToken'},
       ),
     );
@@ -68,6 +76,20 @@ class HttpCourseApi implements CourseApi {
         CourseApiFailureKind.unauthorized,
         '로그인이 만료되었습니다. 다시 로그인해 주세요.',
       );
+    }
+    if (response.statusCode == 404) {
+      try {
+        final body = jsonDecode(utf8.decode(response.bodyBytes));
+        if (body is Map<String, dynamic> &&
+            body['code'] == 'CURRICULUM_NOT_AVAILABLE') {
+          return const CourseApiFailure(
+            CourseApiFailureKind.recoverable,
+            '선택한 연도의 교과과정이 아직 준비되지 않았어요. 연도를 확인하거나 나중에 다시 시도해 주세요.',
+          );
+        }
+      } on FormatException catch (_) {
+        return _malformedResponse;
+      }
     }
     return const CourseApiFailure(
       CourseApiFailureKind.recoverable,

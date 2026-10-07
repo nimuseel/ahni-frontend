@@ -48,12 +48,19 @@ class CourseCatalogController extends ChangeNotifier {
   CourseCatalogState _state = const CourseCatalogInitial();
   List<CourseCatalogItem> _allCourses = const [];
   int _generation = 0;
+  int? _academicYear;
 
   CourseCatalogState get state => _state;
 
-  Future<void> load({bool force = false}) async {
-    if (_state is CourseCatalogLoading) return;
-    if (!force && _state is! CourseCatalogInitial) return;
+  Future<void> load({required int academicYear, bool force = false}) async {
+    if (!force &&
+        _academicYear == academicYear &&
+        _state is! CourseCatalogInitial) {
+      return;
+    }
+    _academicYear = academicYear;
+    _allCourses = const [];
+    final requestGeneration = ++_generation;
 
     final session = _auth.currentSession;
     if (session == null) {
@@ -61,10 +68,12 @@ class CourseCatalogController extends ChangeNotifier {
       return;
     }
 
-    final requestGeneration = _generation;
     _setState(const CourseCatalogLoading());
     try {
-      final courses = await _api.getCourses(session.accessToken);
+      final courses = await _api.getCourses(
+        session.accessToken,
+        academicYear: academicYear,
+      );
       if (requestGeneration != _generation) return;
       _allCourses = List.unmodifiable(courses);
       _setState(
@@ -86,7 +95,7 @@ class CourseCatalogController extends ChangeNotifier {
   }
 
   void search(String query) {
-    if (_allCourses.isEmpty) return;
+    if (_state is! CourseCatalogReady || _allCourses.isEmpty) return;
     final normalizedQuery = query.trim().toLowerCase();
     final courses = normalizedQuery.isEmpty
         ? _allCourses
@@ -105,10 +114,14 @@ class CourseCatalogController extends ChangeNotifier {
     );
   }
 
-  Future<void> retry() => load(force: true);
+  Future<void> retry() async {
+    final year = _academicYear;
+    if (year != null) await load(academicYear: year, force: true);
+  }
 
   void reset() {
     _generation++;
+    _academicYear = null;
     _allCourses = const [];
     _setState(const CourseCatalogInitial());
   }
@@ -116,5 +129,11 @@ class CourseCatalogController extends ChangeNotifier {
   void _setState(CourseCatalogState next) {
     _state = next;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _generation++;
+    super.dispose();
   }
 }

@@ -52,7 +52,7 @@ class _GradeRegistrationPageState extends State<GradeRegistrationPage> {
     widget.courseController.addListener(_refresh);
     widget.registrationController.addListener(_refresh);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.courseController.load();
+      if (mounted) _loadCourses();
     });
   }
 
@@ -70,6 +70,7 @@ class _GradeRegistrationPageState extends State<GradeRegistrationPage> {
   }
 
   Future<void> _selectCourse() async {
+    final year = _academicYearController.text;
     final selected = await showModalBottomSheet<CourseCatalogItem>(
       context: context,
       isScrollControlled: true,
@@ -80,7 +81,9 @@ class _GradeRegistrationPageState extends State<GradeRegistrationPage> {
       ),
       builder: (_) => _CoursePickerSheet(controller: widget.courseController),
     );
-    if (selected == null || !mounted) return;
+    if (selected == null || !mounted || year != _academicYearController.text) {
+      return;
+    }
     setState(() {
       _course = selected;
       _creditController.text = _formatNumber(selected.credit);
@@ -91,10 +94,29 @@ class _GradeRegistrationPageState extends State<GradeRegistrationPage> {
 
   String? _validateYear(String? value) {
     final year = int.tryParse(value?.trim() ?? '');
-    if (year == null || year < 2000) {
-      return '2000년 이후의 수강연도를 입력해 주세요.';
+    if (year == null || year < 2000 || year > DateTime.now().year) {
+      return '2000년부터 올해까지의 수강연도를 입력해 주세요.';
     }
     return null;
+  }
+
+  void _loadCourses() {
+    final year = int.tryParse(_academicYearController.text);
+    if (_validateYear(_academicYearController.text) == null && year != null) {
+      widget.courseController.load(academicYear: year);
+    } else {
+      widget.courseController.reset();
+    }
+  }
+
+  void _changeYear(String value) {
+    setState(() {
+      _course = null;
+      _creditController.clear();
+      _replacedGradeEntityId = null;
+    });
+    widget.registrationController.reset();
+    _loadCourses();
   }
 
   String? _validateCredit(String? value) {
@@ -138,6 +160,7 @@ class _GradeRegistrationPageState extends State<GradeRegistrationPage> {
   Widget build(BuildContext context) {
     final registrationState = widget.registrationController.state;
     final isSubmitting = registrationState is GradeRegistrationSubmitting;
+    final catalogReady = widget.courseController.state is CourseCatalogReady;
     final message = switch (registrationState) {
       GradeRegistrationFailure state => state.message,
       _ => null,
@@ -183,44 +206,6 @@ class _GradeRegistrationPageState extends State<GradeRegistrationPage> {
                               _ErrorMessage(message: value),
                               const SizedBox(height: 20),
                             ],
-                            FormField<CourseCatalogItem>(
-                              validator: (_) =>
-                                  _course == null ? '과목을 선택해 주세요.' : null,
-                              builder: (field) => Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '과목',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  InkWell(
-                                    key: const Key('course-picker'),
-                                    onTap: isSubmitting ? null : _selectCourse,
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: InputDecorator(
-                                      decoration: InputDecoration(
-                                        errorText: field.errorText,
-                                        suffixIcon: const Icon(
-                                          Icons.search_rounded,
-                                        ),
-                                      ),
-                                      child: _course == null
-                                          ? Text(
-                                              '과목명 또는 과목 코드로 찾아보세요',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyLarge,
-                                            )
-                                          : _SelectedCourse(course: _course!),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 20),
                             TextFormField(
                               key: const Key('academic-year'),
                               controller: _academicYearController,
@@ -230,8 +215,10 @@ class _GradeRegistrationPageState extends State<GradeRegistrationPage> {
                                 FilteringTextInputFormatter.digitsOnly,
                               ],
                               textInputAction: TextInputAction.next,
-                              onChanged: (_) => setState(_syncReplacement),
+                              onChanged: _changeYear,
                               validator: _validateYear,
+                              autovalidateMode:
+                                  AutovalidateMode.onUserInteraction,
                               decoration: const InputDecoration(
                                 labelText: '수강연도',
                                 suffixText: '년',
@@ -289,6 +276,74 @@ class _GradeRegistrationPageState extends State<GradeRegistrationPage> {
                                 ],
                               ),
                             ),
+                            const SizedBox(height: 20),
+                            FormField<CourseCatalogItem>(
+                              validator: (_) =>
+                                  _course == null ? '과목을 선택해 주세요.' : null,
+                              builder: (field) => InkWell(
+                                key: const Key('course-picker'),
+                                onTap: isSubmitting || !catalogReady
+                                    ? null
+                                    : _selectCourse,
+                                borderRadius: BorderRadius.circular(12),
+                                child: InputDecorator(
+                                  decoration: InputDecoration(
+                                    labelText: '과목',
+                                    errorText: field.errorText,
+                                    suffixIcon: const Icon(
+                                      Icons.search_rounded,
+                                    ),
+                                  ),
+                                  child: _course == null
+                                      ? const WhitespaceWrappedText(
+                                          '선택한 연도의 과목을 찾아보세요',
+                                        )
+                                      : _SelectedCourse(course: _course!),
+                                ),
+                              ),
+                            ),
+                            switch (widget.courseController.state) {
+                              CourseCatalogLoading() => const Padding(
+                                padding: EdgeInsets.only(top: 12),
+                                child: WhitespaceWrappedText(
+                                  '이 연도의 과목을 불러오고 있어요.',
+                                ),
+                              ),
+                              CourseCatalogFailure state => Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 12),
+                                    child: _ErrorMessage(
+                                      message: state.message,
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        widget.courseController.retry(),
+                                    child: const Text('다시 시도'),
+                                  ),
+                                ],
+                              ),
+                              CourseCatalogEmpty() => const Padding(
+                                padding: EdgeInsets.only(top: 12),
+                                child: WhitespaceWrappedText(
+                                  '이 연도에 등록된 과목이 없어요.',
+                                ),
+                              ),
+                              CourseCatalogAuthenticationRequired() =>
+                                TextButton(
+                                  onPressed: widget.onAuthenticationRequired,
+                                  child: const Text('다시 로그인해 주세요'),
+                                ),
+                              CourseCatalogInitial() => const Padding(
+                                padding: EdgeInsets.only(top: 12),
+                                child: WhitespaceWrappedText(
+                                  '수강연도를 먼저 입력해 주세요.',
+                                ),
+                              ),
+                              CourseCatalogReady() => const SizedBox.shrink(),
+                            },
                             const SizedBox(height: 20),
                             KeyedSubtree(
                               key: const Key('grade-code'),
@@ -380,7 +435,9 @@ class _GradeRegistrationPageState extends State<GradeRegistrationPage> {
                               width: double.infinity,
                               child: FilledButton(
                                 key: const Key('register-grade'),
-                                onPressed: isSubmitting ? null : _submit,
+                                onPressed: isSubmitting || !catalogReady
+                                    ? null
+                                    : _submit,
                                 child: isSubmitting
                                     ? const SizedBox.square(
                                         dimension: 20,

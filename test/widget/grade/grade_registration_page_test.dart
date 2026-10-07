@@ -12,6 +12,22 @@ import '../../support/grade_fakes.dart';
 import '../../support/onboarding_fakes.dart';
 
 void main() {
+  testWidgets('changing the academic year clears selected course and credit', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_testApp());
+    await tester.pumpAndSettle();
+    await _selectCourse(tester);
+    expect(find.text('프로그래밍 기초'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('academic-year')));
+    await tester.enterText(find.byKey(const Key('academic-year')), '2024');
+    await tester.pumpAndSettle();
+    expect(find.text('프로그래밍 기초'), findsNothing);
+    final credit = tester.widget<TextFormField>(
+      find.byKey(const Key('credit')),
+    );
+    expect(credit.controller!.text, isEmpty);
+  });
   testWidgets('registers a selected course and returns the created grade', (
     tester,
   ) async {
@@ -178,7 +194,10 @@ class _FakeCourseApi implements CourseApi {
   List<CourseCatalogItem> results = const [];
 
   @override
-  Future<List<CourseCatalogItem>> getCourses(String accessToken) async {
+  Future<List<CourseCatalogItem>> getCourses(
+    String accessToken, {
+    required int academicYear,
+  }) async {
     return results;
   }
 }
