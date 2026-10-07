@@ -9,6 +9,38 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
+  for (final code in ['CURRICULUM_NOT_AVAILABLE', 'COURSE_NOT_IN_CURRICULUM']) {
+    test(
+      '$code gives curriculum feedback rather than a missing-student error',
+      () async {
+        final api = HttpGradeApi(
+          baseUri: Uri.parse('https://api.ahni.test'),
+          client: MockClient(
+            (_) async => http.Response(
+              jsonEncode({'code': code}),
+              code == 'CURRICULUM_NOT_AVAILABLE' ? 404 : 400,
+            ),
+          ),
+        );
+        expect(
+          () => api.registerGrade('jwt', _registration),
+          throwsA(
+            isA<GradeApiFailure>()
+                .having(
+                  (failure) => failure.kind,
+                  'kind',
+                  GradeApiFailureKind.validation,
+                )
+                .having(
+                  (failure) => failure.userMessage,
+                  'message',
+                  contains('연도'),
+                ),
+          ),
+        );
+      },
+    );
+  }
   test(
     'GET /grades sends the bearer token and parses complete records',
     () async {

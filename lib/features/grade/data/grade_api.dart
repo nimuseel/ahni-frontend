@@ -256,6 +256,14 @@ class HttpGradeApi implements GradeApi {
       );
     }
     return switch (code) {
+      'CURRICULUM_NOT_AVAILABLE' => const GradeApiFailure(
+        GradeApiFailureKind.validation,
+        '선택한 연도의 교과과정이 아직 준비되지 않았어요. 수강연도를 확인해 주세요.',
+      ),
+      'COURSE_NOT_IN_CURRICULUM' => const GradeApiFailure(
+        GradeApiFailureKind.validation,
+        '선택한 연도의 과목이 아니에요. 수강연도에 맞는 과목을 다시 선택해 주세요.',
+      ),
       'COURSE_NOT_FOUND' => const GradeApiFailure(
         GradeApiFailureKind.validation,
         '선택한 과목을 찾을 수 없어요. 과목을 다시 선택해 주세요.',

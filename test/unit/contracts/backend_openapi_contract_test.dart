@@ -20,6 +20,7 @@ void main() {
     expect(paths, contains('/api/v1/students/me/majors'));
     expect(paths, contains('/api/v1/departments'));
     expect(paths, contains('/api/v1/grades'));
+    expect(paths, contains('/api/v1/curriculum-courses'));
     expect(paths, contains('/api/v1/grades/summary'));
     expect(paths, contains('/api/v1/graduation-requirements'));
     expect(paths, contains('/api/v1/graduation-progress'));

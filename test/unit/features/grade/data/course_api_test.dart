@@ -7,15 +7,33 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
+  test('missing curriculum explains the selected-year problem', () async {
+    final api = HttpCourseApi(
+      baseUri: Uri.parse('https://api.ahni.test'),
+      client: MockClient(
+        (_) async => http.Response('{"code":"CURRICULUM_NOT_AVAILABLE"}', 404),
+      ),
+    );
+    expect(
+      () => api.getCourses('jwt', academicYear: 2023),
+      throwsA(
+        isA<CourseApiFailure>().having(
+          (failure) => failure.userMessage,
+          'message',
+          contains('선택한 연도'),
+        ),
+      ),
+    );
+  });
   test(
-    'GET /courses sends the bearer token and parses catalog courses',
+    'GET /curriculum-courses sends the selected year and bearer token',
     () async {
       final api = HttpCourseApi(
         baseUri: Uri.parse('https://api.ahni.test'),
         client: MockClient((request) async {
           expect(request.method, 'GET');
-          expect(request.url.path, '/api/v1/courses');
-          expect(request.url.query, isEmpty);
+          expect(request.url.path, '/api/v1/curriculum-courses');
+          expect(request.url.queryParameters['academicYear'], '2024');
           expect(request.headers['authorization'], 'Bearer jwt');
           return http.Response.bytes(
             utf8.encode(
@@ -47,7 +65,7 @@ void main() {
         }),
       );
 
-      final courses = await api.getCourses('jwt');
+      final courses = await api.getCourses('jwt', academicYear: 2024);
 
       expect(courses, hasLength(2));
       expect(courses.first.entityId, 'course-id-1');
@@ -75,7 +93,7 @@ void main() {
     );
 
     expect(
-      () => api.getCourses('jwt'),
+      () => api.getCourses('jwt', academicYear: 2024),
       throwsA(
         isA<CourseApiFailure>()
             .having(
@@ -99,7 +117,7 @@ void main() {
     );
 
     expect(
-      () => api.getCourses('expired-jwt'),
+      () => api.getCourses('expired-jwt', academicYear: 2024),
       throwsA(
         isA<CourseApiFailure>()
             .having(
