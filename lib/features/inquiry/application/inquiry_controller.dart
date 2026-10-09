@@ -1,0 +1,138 @@
+// ignore_for_file: prefer_initializing_formals
+
+import 'package:ahni_mobile/core/auth/auth_gateway.dart';
+import 'package:ahni_mobile/features/inquiry/data/inquiry_api.dart';
+import 'package:ahni_mobile/features/inquiry/domain/inquiry.dart';
+import 'package:flutter/foundation.dart';
+
+sealed class InquiryState {
+  const InquiryState();
+}
+
+class InquiryInitial extends InquiryState {
+  const InquiryInitial();
+}
+
+class InquiryLoading extends InquiryState {
+  const InquiryLoading();
+}
+
+class InquiryReady extends InquiryState {
+  const InquiryReady(this.inquiries);
+
+  final List<Inquiry> inquiries;
+}
+
+class InquiryEmpty extends InquiryState {
+  const InquiryEmpty();
+}
+
+class InquiryFailure extends InquiryState {
+  const InquiryFailure(this.message);
+
+  final String message;
+}
+
+class InquiryAuthenticationRequired extends InquiryState {
+  const InquiryAuthenticationRequired();
+}
+
+class InquiryController extends ChangeNotifier {
+  InquiryController({required AuthGateway auth, required InquiryApi api})
+    : _auth = auth,
+      _api = api;
+
+  final AuthGateway _auth;
+  final InquiryApi _api;
+  InquiryState _state = const InquiryInitial();
+  String? formMessage;
+  bool isSubmitting = false;
+  int _generation = 0;
+
+  InquiryState get state => _state;
+
+  Future<void> load({bool force = false}) async {
+    if (_state is InquiryLoading) return;
+    if (!force && _state is! InquiryInitial) return;
+    final session = _auth.currentSession;
+    if (session == null) {
+      _setState(const InquiryAuthenticationRequired());
+      return;
+    }
+
+    final requestGeneration = _generation;
+    _setState(const InquiryLoading());
+    try {
+      final result = await _api.getInquiries(session.accessToken);
+      if (requestGeneration != _generation) return;
+      _setState(
+        result.isEmpty
+            ? const InquiryEmpty()
+            : InquiryReady(List.unmodifiable(result)),
+      );
+    } on InquiryApiFailure catch (failure) {
+      if (requestGeneration != _generation) return;
+      if (failure.kind == InquiryApiFailureKind.unauthorized) {
+        _setState(const InquiryAuthenticationRequired());
+        return;
+      }
+      _setState(InquiryFailure(failure.userMessage));
+    } on Object catch (_) {
+      if (requestGeneration != _generation) return;
+      _setState(const InquiryFailure('문의 목록을 불러오지 못했어요. 다시 시도해 주세요.'));
+    }
+  }
+
+  Future<bool> create({required String title, required String content}) async {
+    final session = _auth.currentSession;
+    if (session == null) {
+      _setState(const InquiryAuthenticationRequired());
+      return false;
+    }
+    isSubmitting = true;
+    formMessage = null;
+    notifyListeners();
+    try {
+      final inquiry = await _api.createInquiry(
+        session.accessToken,
+        InquiryDraft(title: title, content: content),
+      );
+      final existing = switch (_state) {
+        InquiryReady state => state.inquiries,
+        _ => const <Inquiry>[],
+      };
+      _setState(InquiryReady(List.unmodifiable([inquiry, ...existing])));
+      return true;
+    } on InquiryApiFailure catch (failure) {
+      if (failure.kind == InquiryApiFailureKind.unauthorized) {
+        isSubmitting = false;
+        _setState(const InquiryAuthenticationRequired());
+        return false;
+      }
+      formMessage = failure.userMessage;
+      isSubmitting = false;
+      notifyListeners();
+      return false;
+    } on Object catch (_) {
+      formMessage = '문의를 등록하지 못했어요. 다시 시도해 주세요.';
+      isSubmitting = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<void> retry() => load(force: true);
+
+  void reset() {
+    _generation++;
+    formMessage = null;
+    isSubmitting = false;
+    _setState(const InquiryInitial());
+  }
+
+  void _setState(InquiryState next) {
+    _state = next;
+    if (isSubmitting) isSubmitting = false;
+    notifyListeners();
+  }
+}

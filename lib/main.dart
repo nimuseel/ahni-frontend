@@ -9,6 +9,8 @@ import 'package:ahni_mobile/features/grade/application/grade_registration_contro
 import 'package:ahni_mobile/features/grade/application/grade_simulation_controller.dart';
 import 'package:ahni_mobile/features/grade/data/course_api.dart';
 import 'package:ahni_mobile/features/grade/data/grade_api.dart';
+import 'package:ahni_mobile/features/inquiry/application/inquiry_controller.dart';
+import 'package:ahni_mobile/features/inquiry/data/inquiry_api.dart';
 import 'package:ahni_mobile/features/onboarding/application/onboarding_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -76,6 +78,10 @@ Future<void> main() async {
         api: gradeApi,
       ),
       gradeEditController: GradeEditController(auth: auth, api: gradeApi),
+      inquiryController: InquiryController(
+        auth: auth,
+        api: HttpInquiryApi(baseUri: apiBaseUri, client: httpClient),
+      ),
     ),
   );
 }

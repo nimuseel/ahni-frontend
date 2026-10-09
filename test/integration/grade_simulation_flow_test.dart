@@ -63,6 +63,7 @@ void main() {
             auth: auth,
             api: api,
           ),
+          inquiryController: buildTestInquiryController(auth: auth),
           graduationController: buildTestGraduationController(),
           courseController: buildTestCourseCatalogController(auth: auth),
           gradeRegistrationController: buildTestGradeRegistrationController(

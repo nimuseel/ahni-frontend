@@ -24,6 +24,7 @@ void main() {
         gradeRegistrationController: buildTestGradeRegistrationController(),
         gradeEditController: buildTestGradeEditController(),
         gradeSimulationController: buildTestGradeSimulationController(),
+        inquiryController: buildTestInquiryController(),
       ),
     );
     await tester.pumpAndSettle();

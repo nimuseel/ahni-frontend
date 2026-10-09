@@ -6,6 +6,8 @@ import 'package:ahni_mobile/features/grade/application/grade_list_controller.dar
 import 'package:ahni_mobile/features/grade/application/grade_registration_controller.dart';
 import 'package:ahni_mobile/features/grade/application/grade_simulation_controller.dart';
 import 'package:ahni_mobile/features/grade/presentation/grade_list_page.dart';
+import 'package:ahni_mobile/features/inquiry/application/inquiry_controller.dart';
+import 'package:ahni_mobile/features/inquiry/presentation/inquiry_page.dart';
 import 'package:ahni_mobile/features/onboarding/application/onboarding_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,6 +23,7 @@ class OnboardingPage extends StatefulWidget {
     required this.courseController,
     required this.gradeRegistrationController,
     required this.gradeEditController,
+    required this.inquiryController,
     super.key,
   });
 
@@ -31,6 +34,7 @@ class OnboardingPage extends StatefulWidget {
   final CourseCatalogController courseController;
   final GradeRegistrationController gradeRegistrationController;
   final GradeEditController gradeEditController;
+  final InquiryController inquiryController;
 
   @override
   State<OnboardingPage> createState() => _OnboardingPageState();
@@ -69,6 +73,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       widget.courseController.reset();
       widget.gradeRegistrationController.reset();
       widget.gradeEditController.reset();
+      widget.inquiryController.reset();
     }
     if (mounted) setState(() {});
   }
@@ -102,6 +107,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
         courseController: widget.courseController,
         gradeRegistrationController: widget.gradeRegistrationController,
         gradeEditController: widget.gradeEditController,
+        inquiryController: widget.inquiryController,
         profileState: state,
       ),
       MajorEditing state => _MajorEditingView(
@@ -721,6 +727,7 @@ class _StudentPortalView extends StatefulWidget {
     required this.courseController,
     required this.gradeRegistrationController,
     required this.gradeEditController,
+    required this.inquiryController,
     required this.profileState,
   });
 
@@ -731,6 +738,7 @@ class _StudentPortalView extends StatefulWidget {
   final CourseCatalogController courseController;
   final GradeRegistrationController gradeRegistrationController;
   final GradeEditController gradeEditController;
+  final InquiryController inquiryController;
   final ProfileReady profileState;
 
   @override
@@ -787,6 +795,7 @@ class _StudentPortalViewState extends State<_StudentPortalView> {
     }
     return _ProfileView(
       controller: widget.onboardingController,
+      inquiryController: widget.inquiryController,
       state: widget.profileState,
       bottomNavigationBar: navigationBar,
     );
@@ -796,11 +805,13 @@ class _StudentPortalViewState extends State<_StudentPortalView> {
 class _ProfileView extends StatelessWidget {
   const _ProfileView({
     required this.controller,
+    required this.inquiryController,
     required this.state,
     required this.bottomNavigationBar,
   });
 
   final OnboardingController controller;
+  final InquiryController inquiryController;
   final ProfileReady state;
   final Widget bottomNavigationBar;
 
@@ -943,6 +954,34 @@ class _ProfileView extends StatelessWidget {
                 _ProfileField(
                   label: '계정 상태',
                   value: profile.accountStatus == 'ACTIVE' ? '활성' : '이용 제한',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          _SectionCard(
+            key: const Key('support-card'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('지원', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 12),
+                WhitespaceWrappedText('학사 정보 이용 중 확인이 필요한 내용을 문의할 수 있어요.'),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  key: const Key('open-inquiries'),
+                  onPressed: () {
+                    Navigator.of(context).push<void>(
+                      MaterialPageRoute(
+                        builder: (_) => InquiryPage(
+                          controller: inquiryController,
+                          onAuthenticationRequired: controller.signOut,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.support_agent_rounded),
+                  label: const Text('문의사항'),
                 ),
               ],
             ),
