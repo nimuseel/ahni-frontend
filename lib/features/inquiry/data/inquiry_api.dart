@@ -11,6 +11,7 @@ enum InquiryApiFailureKind {
   studentNotFound,
   validation,
   notFound,
+  conflict,
   recoverable,
 }
 
@@ -27,6 +28,14 @@ abstract interface class InquiryApi {
   Future<Inquiry> getInquiry(String accessToken, String inquiryEntityId);
 
   Future<Inquiry> createInquiry(String accessToken, InquiryDraft draft);
+
+  Future<Inquiry> updateInquiry(
+    String accessToken,
+    String inquiryEntityId,
+    InquiryDraft draft,
+  );
+
+  Future<void> deleteInquiry(String accessToken, String inquiryEntityId);
 }
 
 class HttpInquiryApi implements InquiryApi {
@@ -106,6 +115,47 @@ class HttpInquiryApi implements InquiryApi {
     }
   }
 
+  @override
+  Future<Inquiry> updateInquiry(
+    String accessToken,
+    String inquiryEntityId,
+    InquiryDraft draft,
+  ) async {
+    final response = await _request(
+      () => _client.put(
+        _inquiryUri(inquiryEntityId),
+        headers: {
+          'authorization': 'Bearer $accessToken',
+          'content-type': 'application/json',
+        },
+        body: jsonEncode(draft.toJson()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw _failure(response, fallbackMessage: '문의를 수정하지 못했어요. 다시 시도해 주세요.');
+    }
+    try {
+      return Inquiry.fromJson(_decodeMap(response));
+    } on FormatException catch (_) {
+      throw _malformedResponse;
+    } on TypeError catch (_) {
+      throw _malformedResponse;
+    }
+  }
+
+  @override
+  Future<void> deleteInquiry(String accessToken, String inquiryEntityId) async {
+    final response = await _request(
+      () => _client.delete(
+        _inquiryUri(inquiryEntityId),
+        headers: {'authorization': 'Bearer $accessToken'},
+      ),
+    );
+    if (response.statusCode != 204) {
+      throw _failure(response, fallbackMessage: '문의를 삭제하지 못했어요. 다시 시도해 주세요.');
+    }
+  }
+
   Uri _inquiryUri(String inquiryEntityId) {
     return baseUri.resolve(
       '/api/v1/inquiries/${Uri.encodeComponent(inquiryEntityId)}',
@@ -150,6 +200,10 @@ class HttpInquiryApi implements InquiryApi {
       'INVALID_INQUIRY' || 'INVALID_REQUEST' => const InquiryApiFailure(
         InquiryApiFailureKind.validation,
         '제목과 내용을 확인해 주세요.',
+      ),
+      'INQUIRY_UPDATE_CONFLICT' => const InquiryApiFailure(
+        InquiryApiFailureKind.conflict,
+        '답변이 등록된 문의는 수정할 수 없어요.',
       ),
       _ => InquiryApiFailure(
         InquiryApiFailureKind.recoverable,

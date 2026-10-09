@@ -1,5 +1,6 @@
 import 'package:ahni_mobile/app/ahni_app.dart';
 import 'package:ahni_mobile/core/config/app_environment.dart';
+import 'package:ahni_mobile/core/presentation/whitespace_wrapped_text.dart';
 import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
 import 'package:ahni_mobile/features/inquiry/application/inquiry_controller.dart';
 import 'package:ahni_mobile/features/onboarding/application/onboarding_controller.dart';
@@ -65,7 +66,7 @@ void main() {
     expect(find.byKey(const Key('profile-summary')), findsOneWidget);
   });
 
-  testWidgets('students open inquiries from profile and create one', (
+  testWidgets('students create, update, and delete inquiries from profile', (
     tester,
   ) async {
     final auth = FakeAuthGateway(currentSession: testSession);
@@ -114,6 +115,44 @@ void main() {
     expect(find.text('성적 등록 문의'), findsOneWidget);
     expect(inquiryApi.createCalls, 1);
     expect(inquiryApi.lastDraft?.title, ' 성적 등록 문의 ');
+
+    expect(find.byKey(const Key('edit-inquiry-inquiry-id-2')), findsNothing);
+    expect(find.byKey(const Key('delete-inquiry-inquiry-id-2')), findsNothing);
+
+    await tester.tap(find.text('성적 등록 문의'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('inquiry-detail-page')), findsOneWidget);
+    expect(find.byKey(const Key('edit-inquiry')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('edit-inquiry')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('inquiry-title-field')),
+      '수정 문의',
+    );
+    await tester.enterText(
+      find.byKey(const Key('inquiry-content-field')),
+      '수정된 내용입니다.',
+    );
+    await tester.tap(find.byKey(const Key('submit-inquiry')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('inquiry-detail-page')), findsOneWidget);
+    expect(_wrappedText('수정 문의'), findsOneWidget);
+    expect(_wrappedText('수정된 내용입니다.'), findsOneWidget);
+    expect(inquiryApi.updateCalls, 1);
+    expect(inquiryApi.lastUpdatedInquiryEntityId, 'inquiry-id-2');
+    expect(inquiryApi.lastUpdateDraft?.title, '수정 문의');
+
+    await tester.tap(find.byKey(const Key('delete-inquiry')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirm-delete-inquiry')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('inquiry-page')), findsOneWidget);
+    expect(_wrappedText('등록된 문의가 없어요.'), findsOneWidget);
+    expect(inquiryApi.deleteCalls, 1);
+    expect(inquiryApi.lastDeletedInquiryEntityId, 'inquiry-id-2');
   });
 
   testWidgets('sign-out clears grades owned by the previous student', (
@@ -155,4 +194,10 @@ void main() {
     expect(gradeController.state, isA<GradeListInitial>());
     expect(find.byKey(const Key('auth-email')), findsOneWidget);
   });
+}
+
+Finder _wrappedText(String data) {
+  return find.byWidgetPredicate(
+    (widget) => widget is WhitespaceWrappedText && widget.data == data,
+  );
 }

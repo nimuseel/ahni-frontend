@@ -85,7 +85,10 @@ class _InquiryPageState extends State<InquiryPage> {
                 message: state.message,
                 onRetry: widget.controller.retry,
               ),
-              InquiryReady state => _InquiryList(inquiries: state.inquiries),
+              InquiryReady state => _InquiryList(
+                controller: widget.controller,
+                inquiries: state.inquiries,
+              ),
               InquiryAuthenticationRequired() => const SizedBox.shrink(),
             },
           ),
@@ -96,8 +99,9 @@ class _InquiryPageState extends State<InquiryPage> {
 }
 
 class _InquiryList extends StatelessWidget {
-  const _InquiryList({required this.inquiries});
+  const _InquiryList({required this.controller, required this.inquiries});
 
+  final InquiryController controller;
   final List<Inquiry> inquiries;
 
   @override
@@ -108,15 +112,16 @@ class _InquiryList extends StatelessWidget {
       separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final inquiry = inquiries[index];
-        return _InquiryCard(inquiry: inquiry);
+        return _InquiryCard(controller: controller, inquiry: inquiry);
       },
     );
   }
 }
 
 class _InquiryCard extends StatelessWidget {
-  const _InquiryCard({required this.inquiry});
+  const _InquiryCard({required this.controller, required this.inquiry});
 
+  final InquiryController controller;
   final Inquiry inquiry;
 
   @override
@@ -129,7 +134,8 @@ class _InquiryCard extends StatelessWidget {
         onTap: () {
           Navigator.of(context).push<void>(
             MaterialPageRoute(
-              builder: (_) => InquiryDetailPage(inquiry: inquiry),
+              builder: (_) =>
+                  InquiryDetailPage(controller: controller, inquiry: inquiry),
             ),
           );
         },
@@ -172,9 +178,10 @@ class _InquiryCard extends StatelessWidget {
 }
 
 class InquiryFormPage extends StatefulWidget {
-  const InquiryFormPage({required this.controller, super.key});
+  const InquiryFormPage({required this.controller, this.inquiry, super.key});
 
   final InquiryController controller;
+  final Inquiry? inquiry;
 
   @override
   State<InquiryFormPage> createState() => _InquiryFormPageState();
@@ -188,6 +195,10 @@ class _InquiryFormPageState extends State<InquiryFormPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.inquiry case final inquiry?) {
+      _titleController.text = inquiry.title;
+      _contentController.text = inquiry.content;
+    }
     widget.controller.addListener(_changed);
   }
 
@@ -205,19 +216,31 @@ class _InquiryFormPageState extends State<InquiryFormPage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    final created = await widget.controller.create(
+    final inquiry = widget.inquiry;
+    if (inquiry == null) {
+      final created = await widget.controller.create(
+        title: _titleController.text,
+        content: _contentController.text,
+      );
+      if (created && mounted) Navigator.of(context).pop();
+      return;
+    }
+
+    final updated = await widget.controller.update(
+      inquiry: inquiry,
       title: _titleController.text,
       content: _contentController.text,
     );
-    if (created && mounted) Navigator.of(context).pop();
+    if (updated != null && mounted) Navigator.of(context).pop(updated);
   }
 
   @override
   Widget build(BuildContext context) {
     final isSubmitting = widget.controller.isSubmitting;
+    final isEditing = widget.inquiry != null;
     return Scaffold(
       key: const Key('inquiry-form-page'),
-      appBar: AppBar(title: const Text('문의 등록')),
+      appBar: AppBar(title: Text(isEditing ? '문의 수정' : '문의 등록')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -276,7 +299,7 @@ class _InquiryFormPageState extends State<InquiryFormPage> {
                             dimension: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('등록'),
+                        : Text(isEditing ? '수정' : '등록'),
                   ),
                 ],
               ),
@@ -288,16 +311,84 @@ class _InquiryFormPageState extends State<InquiryFormPage> {
   }
 }
 
-class InquiryDetailPage extends StatelessWidget {
-  const InquiryDetailPage({required this.inquiry, super.key});
+class InquiryDetailPage extends StatefulWidget {
+  const InquiryDetailPage({
+    required this.controller,
+    required this.inquiry,
+    super.key,
+  });
 
+  final InquiryController controller;
   final Inquiry inquiry;
 
   @override
+  State<InquiryDetailPage> createState() => _InquiryDetailPageState();
+}
+
+class _InquiryDetailPageState extends State<InquiryDetailPage> {
+  late Inquiry _inquiry = widget.inquiry;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_changed);
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_changed);
+    super.dispose();
+  }
+
+  Future<void> _edit() async {
+    final updated = await Navigator.of(context).push<Inquiry>(
+      MaterialPageRoute(
+        builder: (_) =>
+            InquiryFormPage(controller: widget.controller, inquiry: _inquiry),
+      ),
+    );
+    if (updated != null && mounted) {
+      setState(() {
+        _inquiry = updated;
+      });
+    }
+  }
+
+  Future<void> _delete() async {
+    final confirmed = await _confirmDelete(context);
+    if (confirmed != true || !mounted) return;
+
+    final deleted = await widget.controller.delete(_inquiry.entityId);
+    if (deleted && mounted) Navigator.of(context).pop();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final actionMessage = widget.controller.actionMessage;
     return Scaffold(
       key: const Key('inquiry-detail-page'),
-      appBar: AppBar(title: const Text('문의 상세')),
+      appBar: AppBar(
+        title: const Text('문의 상세'),
+        actions: [
+          if (_inquiry.canEdit)
+            IconButton(
+              key: const Key('edit-inquiry'),
+              onPressed: widget.controller.isDeleting ? null : _edit,
+              tooltip: '수정',
+              icon: const Icon(Icons.edit_rounded),
+            ),
+          IconButton(
+            key: const Key('delete-inquiry'),
+            onPressed: widget.controller.isDeleting ? null : _delete,
+            tooltip: '삭제',
+            icon: const Icon(Icons.delete_outline_rounded),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -309,28 +400,37 @@ class InquiryDetailPage extends StatelessWidget {
                   children: [
                     Expanded(
                       child: WhitespaceWrappedText(
-                        inquiry.title,
+                        _inquiry.title,
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    _StatusBadge(label: inquiry.statusLabel),
+                    _StatusBadge(label: _inquiry.statusLabel),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _formatDate(inquiry.createdAt),
+                  _formatDate(_inquiry.createdAt),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 24),
-                _DetailSection(title: '문의 내용', body: inquiry.content),
+                _DetailSection(title: '문의 내용', body: _inquiry.content),
                 const SizedBox(height: 16),
                 _DetailSection(
                   title: '답변',
-                  body: inquiry.answer?.trim().isNotEmpty == true
-                      ? inquiry.answer!
+                  body: _inquiry.answer?.trim().isNotEmpty == true
+                      ? _inquiry.answer!
                       : '아직 답변이 등록되지 않았어요.',
                 ),
+                if (actionMessage != null) ...[
+                  const SizedBox(height: 16),
+                  WhitespaceWrappedText(
+                    actionMessage,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -440,3 +540,24 @@ String _formatDate(DateTime dateTime) {
 }
 
 String _twoDigits(int value) => value.toString().padLeft(2, '0');
+
+Future<bool?> _confirmDelete(BuildContext context) {
+  return showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('문의 삭제'),
+      content: const Text('삭제한 문의는 문의 목록에서 보이지 않아요.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('취소'),
+        ),
+        FilledButton(
+          key: const Key('confirm-delete-inquiry'),
+          onPressed: () => Navigator.of(context).pop(true),
+          child: const Text('삭제'),
+        ),
+      ],
+    ),
+  );
+}

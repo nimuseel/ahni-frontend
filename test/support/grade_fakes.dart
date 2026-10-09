@@ -208,9 +208,14 @@ class FakeInquiryApi implements InquiryApi {
   Object? error;
   Inquiry? createResult;
   InquiryDraft? lastDraft;
+  InquiryDraft? lastUpdateDraft;
+  String? lastUpdatedInquiryEntityId;
+  String? lastDeletedInquiryEntityId;
   String? lastAccessToken;
   int calls = 0;
   int createCalls = 0;
+  int updateCalls = 0;
+  int deleteCalls = 0;
 
   @override
   Future<List<Inquiry>> getInquiries(String accessToken) async {
@@ -244,6 +249,37 @@ class FakeInquiryApi implements InquiryApi {
           createdAt: DateTime.utc(2026, 10, 9),
           updatedAt: DateTime.utc(2026, 10, 9),
         );
+  }
+
+  @override
+  Future<Inquiry> updateInquiry(
+    String accessToken,
+    String inquiryEntityId,
+    InquiryDraft draft,
+  ) async {
+    updateCalls++;
+    lastAccessToken = accessToken;
+    lastUpdatedInquiryEntityId = inquiryEntityId;
+    lastUpdateDraft = draft;
+    if (error case final value?) throw value;
+    return Inquiry(
+      entityId: inquiryEntityId,
+      title: draft.title.trim(),
+      content: draft.content.trim(),
+      status: 'IN_REVIEW',
+      answer: null,
+      answeredAt: null,
+      createdAt: DateTime.utc(2026, 10, 9),
+      updatedAt: DateTime.utc(2026, 10, 10),
+    );
+  }
+
+  @override
+  Future<void> deleteInquiry(String accessToken, String inquiryEntityId) async {
+    deleteCalls++;
+    lastAccessToken = accessToken;
+    lastDeletedInquiryEntityId = inquiryEntityId;
+    if (error case final value?) throw value;
   }
 }
 

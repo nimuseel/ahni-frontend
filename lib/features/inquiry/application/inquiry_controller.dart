@@ -46,7 +46,9 @@ class InquiryController extends ChangeNotifier {
   final InquiryApi _api;
   InquiryState _state = const InquiryInitial();
   String? formMessage;
+  String? actionMessage;
   bool isSubmitting = false;
+  bool isDeleting = false;
   int _generation = 0;
 
   InquiryState get state => _state;
@@ -91,6 +93,7 @@ class InquiryController extends ChangeNotifier {
     }
     isSubmitting = true;
     formMessage = null;
+    actionMessage = null;
     notifyListeners();
     try {
       final inquiry = await _api.createInquiry(
@@ -121,18 +124,114 @@ class InquiryController extends ChangeNotifier {
     }
   }
 
+  Future<Inquiry?> update({
+    required Inquiry inquiry,
+    required String title,
+    required String content,
+  }) async {
+    final session = _auth.currentSession;
+    if (session == null) {
+      _setState(const InquiryAuthenticationRequired());
+      return null;
+    }
+    isSubmitting = true;
+    formMessage = null;
+    actionMessage = null;
+    notifyListeners();
+    try {
+      final updated = await _api.updateInquiry(
+        session.accessToken,
+        inquiry.entityId,
+        InquiryDraft(title: title, content: content),
+      );
+      _replaceInquiry(updated);
+      return updated;
+    } on InquiryApiFailure catch (failure) {
+      if (failure.kind == InquiryApiFailureKind.unauthorized) {
+        isSubmitting = false;
+        _setState(const InquiryAuthenticationRequired());
+        return null;
+      }
+      formMessage = failure.userMessage;
+      isSubmitting = false;
+      notifyListeners();
+      return null;
+    } on Object catch (_) {
+      formMessage = '문의를 수정하지 못했어요. 다시 시도해 주세요.';
+      isSubmitting = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<bool> delete(String inquiryEntityId) async {
+    final session = _auth.currentSession;
+    if (session == null) {
+      _setState(const InquiryAuthenticationRequired());
+      return false;
+    }
+    isDeleting = true;
+    actionMessage = null;
+    notifyListeners();
+    try {
+      await _api.deleteInquiry(session.accessToken, inquiryEntityId);
+      _removeInquiry(inquiryEntityId);
+      return true;
+    } on InquiryApiFailure catch (failure) {
+      if (failure.kind == InquiryApiFailureKind.unauthorized) {
+        isDeleting = false;
+        _setState(const InquiryAuthenticationRequired());
+        return false;
+      }
+      actionMessage = failure.userMessage;
+      isDeleting = false;
+      notifyListeners();
+      return false;
+    } on Object catch (_) {
+      actionMessage = '문의를 삭제하지 못했어요. 다시 시도해 주세요.';
+      isDeleting = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<void> retry() => load(force: true);
 
   void reset() {
     _generation++;
     formMessage = null;
+    actionMessage = null;
     isSubmitting = false;
+    isDeleting = false;
     _setState(const InquiryInitial());
   }
 
   void _setState(InquiryState next) {
     _state = next;
     if (isSubmitting) isSubmitting = false;
+    if (isDeleting) isDeleting = false;
     notifyListeners();
+  }
+
+  void _replaceInquiry(Inquiry inquiry) {
+    final existing = switch (_state) {
+      InquiryReady state => state.inquiries,
+      _ => const <Inquiry>[],
+    };
+    final next = existing
+        .map((item) => item.entityId == inquiry.entityId ? inquiry : item)
+        .toList(growable: false);
+    _setState(InquiryReady(List.unmodifiable(next)));
+  }
+
+  void _removeInquiry(String inquiryEntityId) {
+    final existing = switch (_state) {
+      InquiryReady state => state.inquiries,
+      _ => const <Inquiry>[],
+    };
+    final next = existing
+        .where((item) => item.entityId != inquiryEntityId)
+        .toList(growable: false);
+    _setState(next.isEmpty ? const InquiryEmpty() : InquiryReady(next));
   }
 }
