@@ -25,6 +25,13 @@ void main() {
     expect(paths, contains('/api/v1/graduation-requirements'));
     expect(paths, contains('/api/v1/graduation-progress'));
     expect(paths, contains('/api/v1/grades/{gradeEntityId}'));
+    expect(paths, contains('/api/v1/inquiries'));
+    expect(paths, contains('/api/v1/inquiries/{inquiryEntityId}'));
+
+    final inquiryItem =
+        paths['/api/v1/inquiries/{inquiryEntityId}']! as Map<String, Object?>;
+    expect(inquiryItem, contains('put'));
+    expect(inquiryItem, contains('delete'));
 
     final components = contract['components']! as Map<String, Object?>;
     final schemas = components['schemas']! as Map<String, Object?>;

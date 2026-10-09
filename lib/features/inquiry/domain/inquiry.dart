@@ -42,6 +42,8 @@ class Inquiry {
     };
   }
 
+  bool get canEdit => status == 'SUBMITTED' || status == 'IN_REVIEW';
+
   static DateTime? _optionalDateTime(Object? value) {
     return value == null ? null : DateTime.parse(value as String);
   }
