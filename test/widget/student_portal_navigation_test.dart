@@ -1,6 +1,7 @@
 import 'package:ahni_mobile/app/ahni_app.dart';
 import 'package:ahni_mobile/core/config/app_environment.dart';
 import 'package:ahni_mobile/features/grade/application/grade_list_controller.dart';
+import 'package:ahni_mobile/features/inquiry/application/inquiry_controller.dart';
 import 'package:ahni_mobile/features/onboarding/application/onboarding_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,6 +33,7 @@ void main() {
         gradeRegistrationController: buildTestGradeRegistrationController(),
         gradeEditController: buildTestGradeEditController(),
         gradeSimulationController: buildTestGradeSimulationController(),
+        inquiryController: buildTestInquiryController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -63,6 +65,57 @@ void main() {
     expect(find.byKey(const Key('profile-summary')), findsOneWidget);
   });
 
+  testWidgets('students open inquiries from profile and create one', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway(currentSession: testSession);
+    final inquiryApi = FakeInquiryApi();
+    final onboardingController = OnboardingController(
+      auth: auth,
+      api: FakeStudentApi()..getProfileHandler = (_) async => testProfile,
+    );
+
+    await tester.pumpWidget(
+      AhniApp(
+        environment: AppEnvironment.development,
+        controller: onboardingController,
+        gradeController: buildTestGradeListController(auth: auth),
+        graduationController: buildTestGraduationController(),
+        courseController: buildTestCourseCatalogController(),
+        gradeRegistrationController: buildTestGradeRegistrationController(),
+        gradeEditController: buildTestGradeEditController(),
+        gradeSimulationController: buildTestGradeSimulationController(),
+        inquiryController: InquiryController(auth: auth, api: inquiryApi),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('open-inquiries')));
+    await tester.tap(find.byKey(const Key('open-inquiries')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('inquiry-page')), findsOneWidget);
+    expect(find.byKey(const Key('open-inquiry-form')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('open-inquiry-form')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('inquiry-title-field')),
+      ' 성적 등록 문의 ',
+    );
+    await tester.enterText(
+      find.byKey(const Key('inquiry-content-field')),
+      ' 2025년 과목이 보이지 않습니다. ',
+    );
+    await tester.tap(find.byKey(const Key('submit-inquiry')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('inquiry-page')), findsOneWidget);
+    expect(find.text('성적 등록 문의'), findsOneWidget);
+    expect(inquiryApi.createCalls, 1);
+    expect(inquiryApi.lastDraft?.title, ' 성적 등록 문의 ');
+  });
+
   testWidgets('sign-out clears grades owned by the previous student', (
     tester,
   ) async {
@@ -86,6 +139,7 @@ void main() {
         gradeRegistrationController: buildTestGradeRegistrationController(),
         gradeEditController: buildTestGradeEditController(),
         gradeSimulationController: buildTestGradeSimulationController(),
+        inquiryController: buildTestInquiryController(),
       ),
     );
     await tester.pumpAndSettle();

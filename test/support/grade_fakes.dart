@@ -12,9 +12,22 @@ import 'package:ahni_mobile/features/grade/domain/grade_record.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_summary.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_update.dart';
 import 'package:ahni_mobile/features/grade/domain/grade_simulation.dart';
+import 'package:ahni_mobile/features/inquiry/application/inquiry_controller.dart';
+import 'package:ahni_mobile/features/inquiry/data/inquiry_api.dart';
+import 'package:ahni_mobile/features/inquiry/domain/inquiry.dart';
 
 import 'onboarding_fakes.dart';
 export 'graduation_fakes.dart';
+
+InquiryController buildTestInquiryController({
+  AuthGateway? auth,
+  List<Inquiry> inquiries = const [],
+}) {
+  return InquiryController(
+    auth: auth ?? FakeAuthGateway(currentSession: testSession),
+    api: FakeInquiryApi()..results = inquiries,
+  );
+}
 
 GradeSimulationController buildTestGradeSimulationController({
   AuthGateway? auth,
@@ -190,6 +203,50 @@ class FakeGradeApi implements GradeApi {
   }
 }
 
+class FakeInquiryApi implements InquiryApi {
+  List<Inquiry> results = const [];
+  Object? error;
+  Inquiry? createResult;
+  InquiryDraft? lastDraft;
+  String? lastAccessToken;
+  int calls = 0;
+  int createCalls = 0;
+
+  @override
+  Future<List<Inquiry>> getInquiries(String accessToken) async {
+    calls++;
+    lastAccessToken = accessToken;
+    if (error case final value?) throw value;
+    return results;
+  }
+
+  @override
+  Future<Inquiry> getInquiry(String accessToken, String inquiryEntityId) async {
+    lastAccessToken = accessToken;
+    if (error case final value?) throw value;
+    return results.firstWhere((inquiry) => inquiry.entityId == inquiryEntityId);
+  }
+
+  @override
+  Future<Inquiry> createInquiry(String accessToken, InquiryDraft draft) async {
+    createCalls++;
+    lastAccessToken = accessToken;
+    lastDraft = draft;
+    if (error case final value?) throw value;
+    return createResult ??
+        Inquiry(
+          entityId: 'inquiry-id-2',
+          title: draft.title.trim(),
+          content: draft.content.trim(),
+          status: 'SUBMITTED',
+          answer: null,
+          answeredAt: null,
+          createdAt: DateTime.utc(2026, 10, 9),
+          updatedAt: DateTime.utc(2026, 10, 9),
+        );
+  }
+}
+
 final testGrade = GradeRecord(
   entityId: 'grade-id-1',
   course: const GradeCourse(
@@ -255,6 +312,17 @@ final testRplGrade = GradeRecord(
   replacedGradeEntityId: null,
   createdAt: DateTime.utc(2026, 3, 1),
   updatedAt: DateTime.utc(2026, 3, 1),
+);
+
+final testInquiry = Inquiry(
+  entityId: 'inquiry-id-1',
+  title: '성적 등록 문의',
+  content: '2025년 과목이 성적 등록 화면에 보이지 않습니다.',
+  status: 'SUBMITTED',
+  answer: null,
+  answeredAt: null,
+  createdAt: DateTime.utc(2026, 10, 9),
+  updatedAt: DateTime.utc(2026, 10, 9),
 );
 
 const testGradeSummary = GradeSummary(
